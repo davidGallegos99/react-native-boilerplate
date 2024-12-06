@@ -10,7 +10,7 @@
     "format": "prettier --write .",
     "start": "react-native start",
     "test": "jest",
-    "clean": "cd android && ./gradlew clean && cd ..",
+    "clean": "cd android && gradlew clean && cd ..",
     "build:apk": "cd android && gradlew assembleRelease && cd ..",
     "build:bundle": "cd android && gradlew bundleRelease"
   },
