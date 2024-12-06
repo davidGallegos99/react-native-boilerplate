@@ -27,9 +27,9 @@ const WelcomeScreen = ({ navigation }: Props) => {
       <View style={styles.logoContainer}>
         <Logo width={200} height={200} />
       </View>
-      <Text style={styles.welcomeText}>¡Bienvenido a .... {User?.name}!</Text>
+      <Text style={styles.welcomeText}>¡Bienvenida/o/e {User?.name}!</Text>
 
-      <Text style={styles.loadingText}>Estamos cargando tu información para encontrar el lugar ideal para ti...</Text>
+      <Text style={styles.loadingText}>Estamos cargando tu información para encontrar el lugar ideal para tí...</Text>
     </View>
   )
 }

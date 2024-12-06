@@ -9,14 +9,12 @@ import { Directory } from '@services/directories/GetDirectoriesByZone.service'
 function SpecialistCard({ item }: { item: Directory }) {
   return (
     <View style={styles.card}>
-      <View style={styles.textContainer}>
+      <View style={styles.textContainer1}>
         <Text style={styles.title}>{item.name}</Text>
         <Text style={styles.phone}>{item.phone}</Text>
-        <Text style={styles.address}>{item.address}</Text>
       </View>
-      <View style={styles.contactInformation}>
-        <WazeIcon />
-        <MapsIcon />
+      <View style={styles.textContainer2}>
+        <Text style={styles.address}>{item.address}</Text>
       </View>
     </View>
   )
@@ -24,12 +22,13 @@ function SpecialistCard({ item }: { item: Directory }) {
 
 const styles = StyleSheet.create({
   card: {
-    position: 'relative',
-    backgroundColor: '#cea3d9',
+    display: 'flex',
+    flexDirection: 'row',
+    backgroundColor: '#9D47B2',
     padding: 20,
     borderRadius: 20,
     alignItems: 'center',
-    justifyContent: 'flex-end',
+    justifyContent: 'space-between',
     width: '100%'
   },
   contactInformation: {
@@ -39,20 +38,27 @@ const styles = StyleSheet.create({
     bottom: 20,
     left: 20
   },
-  textContainer: {
+  textContainer1: {
     display: 'flex',
-    alignItems: 'flex-end',
-    justifyContent: 'flex-end',
-    alignSelf: 'flex-end'
+    width: '50%',
+    alignItems: 'flex-start',
+    justifyContent: 'flex-start',
+    alignSelf: 'flex-start'
+  },
+  textContainer2: {
+    display: 'flex',
+    width: '50%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'center'
   },
   title: {
-    marginTop: 40,
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#FFFFFF'
   },
   phone: {
-    fontSize: 20,
+    fontSize: 18,
     color: '#FFFFFF',
     fontWeight: '700',
     marginVertical: 5

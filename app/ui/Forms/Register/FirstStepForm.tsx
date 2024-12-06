@@ -66,11 +66,12 @@ export function FirstStepForm({ onSubmit, navigation }: Props) {
                   onChangeText={handleChange('password')}
                   onBlur={handleBlur('password')}
                   value={values.password}
-                  placeholder='Contrasena'
+                  placeholder='Contraseña'
                   secureTextEntry
                 />
                 {errors.password && touched.password && <Text style={styles.errorText}>{errors.password}</Text>}
               </View>
+              <Text style={styles.termsAndConditionTitle}>Aplicación para mayores de 18+ </Text>
               <Text style={styles.termsAndCondition}>
                 Al presionar confirmar usted acepta nuestros terminos y condiciones{' '}
               </Text>
@@ -99,6 +100,13 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: colors.secondaryTextColor,
     marginBottom: 20
+  },
+  termsAndConditionTitle: {
+    textAlign: 'center',
+    fontWeight: 'bold',
+    fontSize: 15,
+    color: colors.secondaryTextColor,
+    marginBottom: 10
   },
   loginLink: {
     fontWeight: 'bold',

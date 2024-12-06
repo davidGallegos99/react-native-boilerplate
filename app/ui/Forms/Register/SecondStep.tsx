@@ -57,6 +57,7 @@ export function SecondStepForm({ onSubmit }: Props) {
 
   const getGenders = async () => {
     const res = await GetGenders()
+    console.log('🚀 ~ getGenders ~ res.data:', res.data)
     setgenders(res.data)
   }
   const getDeptos = async () => {
@@ -102,7 +103,7 @@ export function SecondStepForm({ onSubmit }: Props) {
               <View style={styles.controlsContainer}>
                 <View style={styles.spacing}>
                   <TextField
-                    label='¿Cómo te gusta que te digan?'
+                    label='¿Cómo te gusta que te llamen?'
                     onChangeText={handleChange('alias')}
                     onBlur={handleBlur('alias')}
                     value={values.alias}

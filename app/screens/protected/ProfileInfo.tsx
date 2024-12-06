@@ -69,7 +69,7 @@ export function ProfileInfo({ onSubmit, userInformation }: Props) {
   const years = generateYears()
 
   return (
-    <ScrollView style={styles.scrollView}>
+    <ScrollView style={styles.scrollView} contentContainerStyle={{ flexGrow: 1 }}>
       <Formik
         initialValues={initialValues}
         validationSchema={SignupSchema}
@@ -164,17 +164,16 @@ export function ProfileInfo({ onSubmit, userInformation }: Props) {
 
 const styles = StyleSheet.create({
   scrollView: {
-    flexGrow: 1,
-    width: '100%'
+    width: '100%',
+    paddingBottom: 120
   },
   formContainer: {
     padding: 20,
     alignItems: 'center',
-    flex: 1,
     backgroundColor: '#F8F8F8',
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
-    justifyContent: 'space-evenly',
+    justifyContent: 'flex-start', // Cambiado de 'space-evenly' a 'flex-start'
     paddingBottom: 20
   },
   label: {

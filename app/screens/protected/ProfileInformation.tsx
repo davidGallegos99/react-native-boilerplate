@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { Alert, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import { Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 
 import Loader from '../../ui/components/Loader'
 import AsyncStorage from '@react-native-async-storage/async-storage'
@@ -91,21 +91,6 @@ const ProfileInformation = ({ navigation }: Props) => {
         animationType: 'slide-in'
       })
     } catch (error: any) {
-      console.log(error)
-      console.log('🚀 ~ updateUserInformation ~ Error Message:', error.message) // Mensaje de error principal
-      if (error.response) {
-        // Si el error proviene de la respuesta del servidor
-        console.log('🚀 ~ updateUserInformation ~ Response Status:', error.response.status)
-        console.log('🚀 ~ updateUserInformation ~ Response Data:', error.response.data)
-        console.log('🚀 ~ updateUserInformation ~ Response Headers:', error.response.headers)
-      } else if (error.request) {
-        // Si no se recibió respuesta del servidor
-        console.log('🚀 ~ updateUserInformation ~ Request Error:', error.request)
-      } else {
-        // Si ocurrió otro tipo de error
-        console.log('🚀 ~ updateUserInformation ~ General Error:', error.message)
-      }
-
       toast.show('Error al subir la imagen.', {
         type: 'error',
         placement: 'top',
@@ -188,64 +173,68 @@ const ProfileInformation = ({ navigation }: Props) => {
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-          <Icon name='arrow-back' size={24} color='white' />
-        </TouchableOpacity>
-        <Text style={styles.title}>Mi perfil</Text>
-        <View style={styles.imageContainer}>
-          <Image
-            source={{
-              uri: selectedAvatar || userInformation?.data?.avatar || 'https://via.placeholder.com/100'
-            }}
-            style={styles.profileImage}
-          />
-          <TouchableOpacity style={styles.editIcon} onPress={handleImageSelection}>
-            <Icon name='camera-alt' size={18} color='white' />
-          </TouchableOpacity>
+    <ScrollView contentContainerStyle={{ flexGrow: 1, paddingBottom: 120 }}>
+      <View style={styles.container}>
+        <View style={styles.header}>
+          {/* <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+            <Icon name='arrow-back' size={24} color='white' />
+          </TouchableOpacity> */}
+          <Text style={styles.title}>Mi perfil</Text>
+          <View style={styles.imageContainer}>
+            <TouchableOpacity onPress={handleImageSelection}>
+              <Image
+                source={{
+                  uri: selectedAvatar || userInformation?.data?.avatar || 'https://via.placeholder.com/100'
+                }}
+                style={styles.profileImage}
+              />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.editIcon} onPress={handleImageSelection}>
+              <Icon name='camera-alt' size={18} color='white' />
+            </TouchableOpacity>
+          </View>
+          <Text style={styles.name}>{userInformation?.data?.name ?? 'No name available'}</Text>
+          <Text style={styles.email}>{userInformation?.data?.email ?? 'No email available'}</Text>
         </View>
-        <Text style={styles.name}>{userInformation?.data?.name ?? 'No name available'}</Text>
-        <Text style={styles.email}>{userInformation?.data?.email ?? 'No email available'}</Text>
-      </View>
-      <View style={styles.body}>
-        {!showUserForm ? (
-          <>
-            <TouchableOpacity style={styles.button} onPress={handlePersonalInfo}>
-              <Icon name='person' size={45} color='#6A1B9A' />
-              <Text style={styles.buttonText}>Información personal</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.button} onPress={handleCalendar}>
-              <Icon name='calendar-today' size={45} color='#6A1B9A' />
-              <Text style={styles.buttonText}>Calendario Menstrual</Text>
-            </TouchableOpacity>
-
-            <View style={styles.footer}>
-              <View>
-                <TouchableOpacity style={styles.footerButton} onPress={handleProtocols}>
-                  <Icon name='security' size={20} color='#6A1B9A' />
-                  <Text style={styles.footerText}>Protocolos de seguridad</Text>
+        <View style={styles.body}>
+          {!showUserForm ? (
+            <>
+              <View style={{ marginBottom: 100 }}>
+                <TouchableOpacity style={styles.button} onPress={handlePersonalInfo}>
+                  <Icon name='person' size={45} color='#6A1B9A' />
+                  <Text style={styles.buttonText}>Información personal</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.button} onPress={handleCalendar}>
+                  <Icon name='calendar-today' size={45} color='#6A1B9A' />
+                  <Text style={styles.buttonText}>Calendario Menstrual</Text>
                 </TouchableOpacity>
               </View>
-              <View>
-                <TouchableOpacity style={styles.footerButton} onPress={handleLogout}>
-                  <Icon name='logout' size={20} color='#6A1B9A' />
-                  <Text style={styles.footerText}>Cerrar Sesión</Text>
-                </TouchableOpacity>
+              <View style={styles.footer}>
+                <View>
+                  <TouchableOpacity style={styles.footerButton} onPress={handleProtocols}>
+                    <Icon name='security' size={20} color='#6A1B9A' />
+                    <Text style={styles.footerText}>Protocolos de seguridad</Text>
+                  </TouchableOpacity>
+                </View>
+                <View>
+                  <TouchableOpacity style={styles.footerButton} onPress={handleLogout}>
+                    <Icon name='logout' size={20} color='#6A1B9A' />
+                    <Text style={styles.footerText}>Cerrar Sesión</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
-            </View>
-          </>
-        ) : (
-          <ProfileInfo userInformation={userInformation} onSubmit={updateInformation} />
-        )}
+            </>
+          ) : (
+            <ProfileInfo userInformation={userInformation} onSubmit={updateInformation} />
+          )}
+        </View>
       </View>
-    </View>
+    </ScrollView>
   )
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     backgroundColor: '#6A1B9A'
   },
   loaderContainer: {
@@ -307,12 +296,13 @@ const styles = StyleSheet.create({
     marginTop: 5
   },
   body: {
-    flex: 1,
     backgroundColor: '#F8F8F8',
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
     alignItems: 'center',
-    justifyContent: 'space-evenly',
+    paddingTop: 50,
+    // Ajustar justifyContent
+    justifyContent: 'flex-start',
     paddingBottom: 20
   },
   button: {
@@ -323,7 +313,7 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 10,
     marginVertical: 10,
-    width: '35%'
+    width: 150
   },
   buttonText: {
     textAlign: 'center',
