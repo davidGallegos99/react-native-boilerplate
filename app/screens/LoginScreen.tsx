@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native'
 
 import Logo from '../../logo.svg'
@@ -33,12 +33,58 @@ function LoginScreen({ navigation }: Props) {
   const [email, setEmail] = useState<string>('')
   const [codeLocal, setCodeLocal] = useState<string>('')
   const [isModalVisible, setModalVisible] = useState<boolean>(false)
+  // Estado para controlar intentos y bloqueo
+  const [attempts, setAttempts] = useState<number[]>([])
+  const [isLocked, setIsLocked] = useState<boolean>(false)
+  const [lockTime, setLockTime] = useState<number>(0)
+
+  const MAX_ATTEMPTS = 3
+  const TIME_WINDOW = 60 * 1000 // (60 segundos)
+  const LOCK_DURATION = 30 // Tiempo de bloqueo en segundos
+
+  const cleanAttempts = () => {
+    const currentTime = Date.now()
+    setAttempts(prev => prev.filter(timestamp => currentTime - timestamp <= TIME_WINDOW))
+  }
+
+  const handleFailedAttempt = () => {
+    const currentTime = Date.now()
+    setAttempts(prev => {
+      const updatedAttempts = [...prev, currentTime]
+      return updatedAttempts.filter(timestamp => currentTime - timestamp <= TIME_WINDOW)
+    })
+  }
+
+  useEffect(() => {
+    if (attempts.length >= MAX_ATTEMPTS) {
+      setIsLocked(true)
+      setLockTime(LOCK_DURATION)
+    }
+  }, [attempts])
+
+  useEffect(() => {
+    let timer: any
+    if (isLocked && lockTime > 0) {
+      timer = setInterval(() => {
+        setLockTime(prev => {
+          if (prev <= 1) {
+            setIsLocked(false)
+            setAttempts([])
+            clearInterval(timer)
+          }
+          return prev - 1
+        })
+      }, 1000)
+    }
+    return () => clearInterval(timer)
+  }, [isLocked, lockTime])
 
   const handleLoginWithGoogle = () => {
     Alert.alert('Registro con Google', 'Has presionado REGISTRAR CON GOOGLE')
   }
 
   const handleLoginWithEmailAndPassword = async (data: { email: string; password: string }) => {
+    if (isLocked) return
     try {
       const response = await Login(data)
       await storeData('jwt', response?.access_token)
@@ -47,16 +93,15 @@ function LoginScreen({ navigation }: Props) {
         type: 'success',
         placement: 'top',
         icon: <OKicon />,
-        duration: 4000,
-        animationType: 'slide-in'
+        duration: 4000
       })
       navigation.navigate('Description1')
     } catch (error) {
+      handleFailedAttempt()
       toast.show('Usuario o contraseña incorrectos.', {
         type: 'error',
         placement: 'top',
-        duration: 4000,
-        animationType: 'slide-in'
+        duration: 4000
       })
     }
   }
@@ -141,7 +186,11 @@ function LoginScreen({ navigation }: Props) {
             </Button>
           </View>
           <Text style={styles.enterPersonalInfoText}>Ó INGRESA CON TUS DATOS</Text>
-          <LoginForm handleEmail={getEmailForResetPass} onSubmit={handleLoginWithEmailAndPassword} />
+          {isLocked ? (
+            <Text style={styles.lockedText}>Cuenta bloqueada por {lockTime} segundos</Text>
+          ) : (
+            <LoginForm handleEmail={setEmail} onSubmit={handleLoginWithEmailAndPassword} />
+          )}
           <View style={styles.forgotPasswordBox}>
             <TouchableOpacity onPress={handleResetPassword}>
               <Text style={styles.forgotPasswordText}>¿Olvidaste tu contraseña?</Text>
@@ -168,6 +217,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     justifyContent: 'center'
   },
+  lockedText: { color: 'red', textAlign: 'center', marginVertical: 10, fontSize: 16 },
   forgotPasswordText: {
     color: colors.primaryTextColor,
     fontSize: LayoutUtils.scaleFontSize(18),
