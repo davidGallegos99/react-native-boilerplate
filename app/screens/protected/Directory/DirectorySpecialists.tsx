@@ -43,7 +43,10 @@ function DirectorySpecialists({ zone, goBack }: DirectorySpecialistsProps) {
     return <Loader loading />
   }
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView
+      contentContainerStyle={styles.contentContainer}
+      showsVerticalScrollIndicator={true} // Opcional, para mostrar la barra de scroll
+    >
       <TouchableOpacity style={styles.backButton} onPress={goBack}>
         <Icon name='arrow-back' size={24} color='#6A1B9A' />
         <Text style={styles.backButtonText}>Volver</Text>
@@ -62,7 +65,13 @@ function DirectorySpecialists({ zone, goBack }: DirectorySpecialistsProps) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, alignItems: 'center', backgroundColor: '#FFFFFF', paddingHorizontal: 20, paddingTop: 30 },
+  contentContainer: {
+    flexGrow: 1, // Permite que el contenido crezca y haga scroll
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 20,
+    paddingTop: 30
+  },
   backButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -79,4 +88,5 @@ const styles = StyleSheet.create({
   },
   item: { justifyContent: 'center', alignItems: 'center', marginTop: 20 }
 })
+
 export default DirectorySpecialists
