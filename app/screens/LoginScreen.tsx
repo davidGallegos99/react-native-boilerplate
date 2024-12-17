@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Alert, StyleSheet, Text, View } from 'react-native'
+import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native'
 
 import Logo from '../../logo.svg'
 import Google from '../assets/icons/google.svg'
@@ -70,10 +70,14 @@ function LoginScreen({ navigation }: Props) {
     setEmail(submittedEmail)
   }
 
-  const handleCodeSubmission = async (code: string) => {
+  const handleCodeSubmission = async (code: string): Promise<boolean> => {
     try {
       const res = await ForgotPasswordCode(email, code)
       setCodeLocal(code)
+      if (res.message === 'Código válido') {
+        return true
+      }
+      return false
     } catch (error: any) {
       setModalVisible(false)
       toast.show('Código inválido.', {
@@ -82,13 +86,14 @@ function LoginScreen({ navigation }: Props) {
         duration: 4000,
         animationType: 'slide-in'
       })
+      return false
     }
   }
 
   const handlePasswordChange = async (newPassword: string) => {
     try {
       setModalVisible(false)
-      const newPsw = await ForgotPasswordReset({
+      await ForgotPasswordReset({
         code: codeLocal,
         email,
         password: newPassword,
@@ -115,42 +120,43 @@ function LoginScreen({ navigation }: Props) {
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.welcomeLabelContainer}>
-        <View style={styles.logoContainer}>
-          <Logo width={130} height={120} />
+    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
+        <View style={styles.welcomeLabelContainer}>
+          <View style={styles.logoContainer}>
+            <Logo width={130} height={120} />
+          </View>
+          <Title>¡Bienvenido/a!</Title>
         </View>
-        <Title>¡Bienvenido/a!</Title>
-      </View>
-      <View style={styles.contentContainer}>
-        <View style={styles.button}>
-          <Button
-            icon={<Google width={24} height={24} />}
-            color={colors.secondary}
-            handleClick={handleLoginWithGoogle}
-            appearance='outlined'
-            rounded
-          >
-            REGISTRAR CON GOOGLE
-          </Button>
+        <View style={styles.contentContainer}>
+          <View style={styles.button}>
+            <Button
+              icon={<Google width={24} height={24} />}
+              color={colors.secondary}
+              handleClick={handleLoginWithGoogle}
+              appearance='outlined'
+              rounded
+            >
+              REGISTRAR CON GOOGLE
+            </Button>
+          </View>
+          <Text style={styles.enterPersonalInfoText}>Ó INGRESA CON TUS DATOS</Text>
+          <LoginForm handleEmail={getEmailForResetPass} onSubmit={handleLoginWithEmailAndPassword} />
+          <View style={styles.forgotPasswordBox}>
+            <TouchableOpacity onPress={handleResetPassword}>
+              <Text style={styles.forgotPasswordText}>¿Olvidaste tu contraseña?</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-
-        <Text style={styles.enterPersonalInfoText}>Ó INGRESA CON TUS DATOS</Text>
-        <LoginForm handleEmail={getEmailForResetPass} onSubmit={handleLoginWithEmailAndPassword} />
-        <View style={styles.forgotPasswordBox}>
-          <TouchableOpacity onPress={handleResetPassword}>
-            <Text style={styles.forgotPasswordText}>¿Olvidaste tu contraseña?</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-      <PasswordResetModal
-        isVisible={isModalVisible}
-        onClose={() => setModalVisible(false)}
-        onSubmitEmail={handleEmailSubmission}
-        onSubmitCode={handleCodeSubmission}
-        onSubmitNewPassword={handlePasswordChange}
-      />
-    </View>
+        <PasswordResetModal
+          isVisible={isModalVisible}
+          onClose={() => setModalVisible(false)}
+          onSubmitEmail={handleEmailSubmission}
+          onSubmitCode={handleCodeSubmission}
+          onSubmitNewPassword={handlePasswordChange}
+        />
+      </ScrollView>
+    </KeyboardAvoidingView>
   )
 }
 
@@ -158,16 +164,18 @@ const styles = StyleSheet.create({
   container: {
     flex: 1
   },
+  scrollContainer: {
+    flexGrow: 1,
+    justifyContent: 'center'
+  },
   forgotPasswordText: {
     color: colors.primaryTextColor,
     fontSize: LayoutUtils.scaleFontSize(18),
     textAlign: 'center'
   },
   forgotPasswordBox: {
-    flex: 1,
-    paddingBottom: LayoutUtils.moderateScale(30),
-    flexDirection: 'column',
-    justifyContent: 'flex-end'
+    marginTop: LayoutUtils.moderateScale(20),
+    paddingBottom: LayoutUtils.moderateScale(30)
   },
   enterPersonalInfoText: {
     marginTop: LayoutUtils.moderateScale(20),
@@ -181,13 +189,11 @@ const styles = StyleSheet.create({
     marginBottom: LayoutUtils.moderateScale(30)
   },
   welcomeLabelContainer: {
-    flex: 2,
     alignItems: 'center',
-    justifyContent: 'center'
+    justifyContent: 'center',
+    marginBottom: LayoutUtils.moderateScale(20)
   },
-
   contentContainer: {
-    flex: 4,
     alignItems: 'center'
   },
   button: {

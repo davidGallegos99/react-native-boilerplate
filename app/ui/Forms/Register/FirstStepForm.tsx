@@ -1,10 +1,11 @@
 /* eslint-disable react-native/no-inline-styles */
-import React from 'react'
+import React, { useState } from 'react'
 import { StyleSheet, Text, View } from 'react-native'
 
 import Logo from '../../../../logo.svg'
 import TextField from '../TextField'
 import { Formik } from 'formik'
+import { Checkbox } from 'react-native-paper'
 import * as Yup from 'yup'
 
 import Button from '@ui/components/Button'
@@ -14,8 +15,14 @@ import colors from '@config/theme/colors'
 
 const SignupSchema = Yup.object().shape({
   name: Yup.string().min(4, 'Muy corto!').required('El nombre es requerido'),
-  email: Yup.string().email('Email Invalido').required('Email es requerido'),
-  password: Yup.string().min(8, 'Muy corto!').required('Contraseña es requerida')
+  email: Yup.string().email('Email inválido').required('Email es requerido'),
+  password: Yup.string()
+    .min(8, 'La contraseña debe tener al menos 8 caracteres.')
+    .matches(/[A-Z]/, 'La contraseña debe incluir al menos una letra mayúscula.')
+    .matches(/[a-z]/, 'La contraseña debe incluir al menos una letra minúscula.')
+    .matches(/[0-9]/, 'La contraseña debe incluir al menos un número.')
+    .matches(/[!@#$%^&*(),.?":{}|<>]/, 'La contraseña debe incluir al menos un carácter especial.')
+    .required('La contraseña es requerida')
 })
 
 interface Props {
@@ -24,6 +31,7 @@ interface Props {
 }
 
 export function FirstStepForm({ onSubmit, navigation }: Props) {
+  const [checkboxSelected, setCheckboxSelected] = useState<boolean>(false)
   const handleLogin = () => {
     navigation.navigate('Login')
   }
@@ -33,7 +41,7 @@ export function FirstStepForm({ onSubmit, navigation }: Props) {
         <Logo width={200} height={200} />
       </View>
       <Formik
-        initialValues={{ email: '', password: '' }}
+        initialValues={{ name: '', email: '', password: '' }}
         validationSchema={SignupSchema}
         onSubmit={values => {
           onSubmit({ ...values, password_confirmation: values.password })
@@ -72,11 +80,24 @@ export function FirstStepForm({ onSubmit, navigation }: Props) {
                 {errors.password && touched.password && <Text style={styles.errorText}>{errors.password}</Text>}
               </View>
               <Text style={styles.termsAndConditionTitle}>Aplicación para mayores de 18+ </Text>
-              <Text style={styles.termsAndCondition}>
-                Al presionar confirmar usted acepta nuestros terminos y condiciones{' '}
-              </Text>
+              <View style={styles.checkboxContainer}>
+                <Checkbox
+                  status={checkboxSelected ? 'checked' : 'unchecked'}
+                  onPress={() => setCheckboxSelected(!checkboxSelected)}
+                />
+                <Text style={styles.checkboxText}>
+                  Al presionar confirmar usted acepta nuestros terminos y condiciones
+                </Text>
+              </View>
               <View style={styles.buttonBox}>
-                <Button appearance='filled' color={colors.primary} handleClick={handleSubmit} rounded>
+                <Button
+                  appearance='filled'
+                  color={colors.primary}
+                  handleClick={handleSubmit}
+                  rounded
+                  elevated={!checkboxSelected}
+                  disabled={!checkboxSelected} // Deshabilita el botón si el checkbox no está seleccionado
+                >
                   CONFIRMAR
                 </Button>
               </View>
@@ -94,13 +115,6 @@ export function FirstStepForm({ onSubmit, navigation }: Props) {
   )
 }
 const styles = StyleSheet.create({
-  termsAndCondition: {
-    textAlign: 'center',
-    fontWeight: '500',
-    fontSize: 10,
-    color: colors.secondaryTextColor,
-    marginBottom: 20
-  },
   termsAndConditionTitle: {
     textAlign: 'center',
     fontWeight: 'bold',
@@ -142,5 +156,16 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: 'red'
+  },
+  checkboxContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20
+  },
+  checkboxText: {
+    fontSize: 10,
+    color: colors.secondaryTextColor,
+    flexShrink: 1
   }
 })

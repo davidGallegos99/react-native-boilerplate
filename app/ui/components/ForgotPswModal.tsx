@@ -5,7 +5,7 @@ interface PasswordResetModalProps {
   isVisible: boolean
   onClose: () => void
   onSubmitEmail: (email: string) => void
-  onSubmitCode: (code: string) => void
+  onSubmitCode: (code: string) => Promise<boolean>
   onSubmitNewPassword: (password: string) => void
 }
 
@@ -18,6 +18,7 @@ const PasswordResetModal: React.FC<PasswordResetModalProps> = ({
 }) => {
   const [step, setStep] = useState<number>(1)
   const [email, setEmail] = useState<string>('')
+  const [error, setError] = useState<string>('')
   const [errorMsj, setErrorMsj] = useState<string>('')
   const [code, setCode] = useState<string>('')
   const [newPassword, setNewPassword] = useState<string>('')
@@ -34,21 +35,32 @@ const PasswordResetModal: React.FC<PasswordResetModalProps> = ({
     }
   }, [isVisible])
 
-  const handleNextStep = () => {
+  const validateEmailFormat = (text: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    return emailRegex.test(text)
+  }
+
+  const handleNextStep = async () => {
     if (step === 1) {
-      if (!email.trim()) {
+      if (!email.trim() || !validateEmailFormat(email)) {
         setErrorMsj('Por favor, ingresa un correo electrónico válido.')
         return
       }
       setErrorMsj('')
       onSubmitEmail(email)
+      setStep(2)
     } else if (step === 2) {
       if (!code.trim()) {
         setErrorMsj('Por favor, ingresa el código enviado a tu correo.')
         return
       }
       setErrorMsj('')
-      onSubmitCode(code)
+      const isCodeValid = await onSubmitCode(code)
+      if (!isCodeValid) {
+        setErrorMsj('El código ingresado es inválido. Por favor, inténtalo de nuevo.')
+        return
+      }
+      setStep(3)
     } else if (step === 3) {
       if (!newPassword || newPassword.length < 8) {
         setErrorMsj('La contraseña debe tener al menos 8 caracteres.')
@@ -60,8 +72,8 @@ const PasswordResetModal: React.FC<PasswordResetModalProps> = ({
       }
       setErrorMsj('')
       onSubmitNewPassword(newPassword)
+      onClose()
     }
-    setStep(step + 1)
   }
 
   const renderStepContent = () => {
@@ -76,6 +88,8 @@ const PasswordResetModal: React.FC<PasswordResetModalProps> = ({
             value={email}
             onChangeText={setEmail}
             placeholderTextColor='#533A8E'
+            keyboardType='email-address'
+            autoCapitalize='none'
           />
         </>
       )

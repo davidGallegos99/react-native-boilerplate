@@ -171,7 +171,7 @@ const ProfileInformation = ({ navigation }: Props) => {
   if (loading) {
     return <Loader loading />
   }
-
+  console.log('userInformation :>> ', userInformation)
   return (
     <ScrollView contentContainerStyle={{ flexGrow: 1, paddingBottom: 120 }}>
       <View style={styles.container}>
@@ -199,15 +199,22 @@ const ProfileInformation = ({ navigation }: Props) => {
         <View style={styles.body}>
           {!showUserForm ? (
             <>
-              <View style={{ marginBottom: 100 }}>
+              <View
+                style={[
+                  styles.contentContainer,
+                  userInformation?.data?.gender?.id == 2 ? styles.gender2 : styles.default
+                ]}
+              >
                 <TouchableOpacity style={styles.button} onPress={handlePersonalInfo}>
                   <Icon name='person' size={45} color='#6A1B9A' />
                   <Text style={styles.buttonText}>Información personal</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.button} onPress={handleCalendar}>
-                  <Icon name='calendar-today' size={45} color='#6A1B9A' />
-                  <Text style={styles.buttonText}>Calendario Menstrual</Text>
-                </TouchableOpacity>
+                {userInformation?.data?.gender?.id == 2 && (
+                  <TouchableOpacity style={styles.button} onPress={handleCalendar}>
+                    <Icon name='calendar-today' size={45} color='#6A1B9A' />
+                    <Text style={styles.buttonText}>Calendario Menstrual</Text>
+                  </TouchableOpacity>
+                )}
               </View>
               <View style={styles.footer}>
                 <View>
@@ -236,6 +243,22 @@ const ProfileInformation = ({ navigation }: Props) => {
 const styles = StyleSheet.create({
   container: {
     backgroundColor: '#6A1B9A'
+  },
+  contentContainer: {
+    flex: 1, // Hace que el contenedor principal tome todo el espacio disponible
+    justifyContent: 'flex-start', // Inicia el contenido desde arriba
+    alignItems: 'center',
+    paddingBottom: 20 // Espacio general al final
+  },
+
+  gender2: {
+    justifyContent: 'space-between', // Distribuye el contenido equitativamente
+    paddingBottom: 100 // Espacio extra si genderId es 2
+  },
+
+  default: {
+    justifyContent: 'center', // Centra el contenido en la pantalla
+    paddingBottom: 200 // Espacio extra si genderId no es 2
   },
   loaderContainer: {
     flex: 1,

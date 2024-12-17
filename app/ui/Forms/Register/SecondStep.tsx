@@ -9,6 +9,7 @@ import { Formik } from 'formik'
 import { IDeparment } from 'interfaces/GetDeparments.interface'
 import { IGender } from 'interfaces/GetGenders.interface'
 import { ScrollView } from 'react-native-gesture-handler'
+import { useToast } from 'react-native-toast-notifications'
 import * as Yup from 'yup'
 
 import Button from '@ui/components/Button'
@@ -19,23 +20,46 @@ import { GetGenders } from '@services/GetGenders.service'
 
 import colors from '@config/theme/colors'
 
-const SignupSchema = Yup.object().shape({
-  alias: Yup.string().min(4, 'Muy corto!').required('El pronombre es requerido'),
-  day: Yup.number().max(31, 'Solo dias calendario validos').required('El dia es requerido'),
-  month: Yup.number().min(1).max(12).required('El mes es requerido'),
-  year: Yup.number()
-    .min(1950, 'Año no puede ser menor 1950')
-    .max(new Date().getFullYear(), `El año no debe ser mayor a ${new Date().getFullYear()}`)
-    .required('El año es requerido'),
-  gender_id: Yup.string().required('Genero es requerido'),
-  department_id: Yup.string().required('El departamento es requerido')
-})
+const SignupSchema = Yup.object()
+  .shape({
+    alias: Yup.string().min(4, 'Muy corto!').required('El pronombre es requerido'),
+    day: Yup.number()
+      .min(1, 'El día debe ser mayor o igual a 1')
+      .max(31, 'El día debe ser menor o igual a 31')
+      .required('El día es requerido'),
+    month: Yup.number()
+      .min(1, 'El mes debe ser mayor o igual a 1')
+      .max(12, 'El mes debe ser menor o igual a 12')
+      .required('El mes es requerido'),
+    year: Yup.number()
+      .min(1900, 'Año no puede ser menor a 1900')
+      .max(new Date().getFullYear(), `El año no debe ser mayor a ${new Date().getFullYear()}`)
+      .required('El año es requerido'),
+    gender_id: Yup.string().required('Género es requerido'),
+    department_id: Yup.string().required('El departamento es requerido')
+  })
+  .test('is-18', 'Debes tener al menos 18 años.', function (values) {
+    const { day, month, year } = values
+    const birthDate = new Date(year, month - 1, day)
+    const today = new Date()
+    const age = today.getFullYear() - birthDate.getFullYear()
+    if (
+      age > 18 ||
+      (age === 18 &&
+        (today.getMonth() > birthDate.getMonth() ||
+          (today.getMonth() === birthDate.getMonth() && today.getDate() >= birthDate.getDate())))
+    ) {
+      return true
+    }
+    return false
+  })
 
 interface Props {
   onSubmit: Function
 }
 
 export function SecondStepForm({ onSubmit }: Props) {
+  const toast = useToast()
   const [genders, setgenders] = useState<IGender[]>([])
   const [dptos, setDptos] = useState<IDeparment[]>([])
 
@@ -57,7 +81,6 @@ export function SecondStepForm({ onSubmit }: Props) {
 
   const getGenders = async () => {
     const res = await GetGenders()
-    console.log('🚀 ~ getGenders ~ res.data:', res.data)
     setgenders(res.data)
   }
   const getDeptos = async () => {
@@ -82,16 +105,35 @@ export function SecondStepForm({ onSubmit }: Props) {
         </View>
 
         <Formik
-          initialValues={{ day: null, month: null, year: null, department_id: '', alias: '', gender_id: '' }}
+          initialValues={{
+            day: null,
+            month: null,
+            year: null,
+            department_id: '',
+            alias: '',
+            gender_id: ''
+          }}
           validationSchema={SignupSchema}
           onSubmit={values => {
-            const dataToSend = {
-              alias: values.alias,
-              gender_id: values.gender_id,
-              department_id: values.department_id,
-              birth_date: `${values.month}/${values.day}/${values.year}`
+            try {
+              SignupSchema.validateSync(values)
+              const dataToSend = {
+                alias: values.alias,
+                gender_id: values.gender_id,
+                department_id: values.department_id,
+                birth_date: `${values.month}/${values.day}/${values.year}`
+              }
+              onSubmit(dataToSend)
+            } catch (error: any) {
+              if (error.message === 'Debes tener al menos 18 años.') {
+                toast.show('Debes tener al menos 18 años.', {
+                  type: 'danger',
+                  placement: 'top',
+                  duration: 4000,
+                  animationType: 'slide-in'
+                })
+              }
             }
-            onSubmit(dataToSend)
           }}
         >
           {({ handleChange, handleBlur, handleSubmit, values, setFieldValue, errors, touched }: any) => (

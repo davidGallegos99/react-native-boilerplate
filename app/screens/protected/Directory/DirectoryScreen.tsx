@@ -20,14 +20,21 @@ function DirectoryScreen() {
     setscreen('zones')
   }
 
+  const goToList = () => {
+    setscreen('dropdown')
+  }
+  const goToMain = () => {
+    setscreen('main')
+  }
+
   return (
     <>
       {screen === 'main' ? (
         <DirectoryMain handleClick={handleMainClick} />
       ) : screen === 'dropdown' ? (
-        <DropdownDirectory changeZone={handleChangeZone} />
+        <DropdownDirectory changeZone={handleChangeZone} goBack={goToMain} />
       ) : screen === 'zones' ? (
-        <DirectorySpecialists zone={zone} />
+        <DirectorySpecialists zone={zone} goBack={goToList} />
       ) : null}
     </>
   )

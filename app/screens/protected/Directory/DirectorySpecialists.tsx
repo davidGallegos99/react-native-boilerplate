@@ -1,15 +1,13 @@
-/* eslint-disable react-hooks/exhaustive-deps */
-
-/* eslint-disable react-native/no-inline-styles */
 import { useEffect, useState } from 'react'
-import { StyleSheet, View } from 'react-native'
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 
 import Logo from '../../../../logo.svg'
 import Loader from '../../../ui/components/Loader'
 import { ScrollView } from 'react-native-gesture-handler'
+import Icon from 'react-native-vector-icons/MaterialIcons'
 
 import Button from '@ui/components/Button'
-import DataFilterActions from '@ui/components/DataFilterActions'
+// import DataFilterActions from '@ui/components/DataFilterActions'
 import SpecialistList from '@ui/components/SpeclistList'
 
 import { Directory, GetDirectoriesByZone } from '@services/directories/GetDirectoriesByZone.service'
@@ -17,20 +15,24 @@ import { Zone } from '@services/directories/GetZones.service'
 
 import colors from '@config/theme/colors'
 
-function DirectorySpecialists({ zone }: { zone: Zone }) {
+interface DirectorySpecialistsProps {
+  zone: Zone
+  goBack: () => void
+}
+
+function DirectorySpecialists({ zone, goBack }: DirectorySpecialistsProps) {
   const [directories, setdirectories] = useState<Directory[]>([])
   const [loading, setLoading] = useState<boolean>(true)
 
   const getDirectories = async () => {
     try {
       const res = await GetDirectoriesByZone(zone)
+      console.log('🚀 ~ getDirectories ~ res:', res)
       setdirectories(res.data)
     } catch (error) {
-      console.log('🚀 ~ getDirectories ~ error:', error)
     } finally {
       setLoading(false)
     }
-    setLoading(false)
   }
 
   useEffect(() => {
@@ -42,6 +44,10 @@ function DirectorySpecialists({ zone }: { zone: Zone }) {
   }
   return (
     <ScrollView contentContainerStyle={styles.container}>
+      <TouchableOpacity style={styles.backButton} onPress={goBack}>
+        <Icon name='arrow-back' size={24} color='#6A1B9A' />
+        <Text style={styles.backButtonText}>Volver</Text>
+      </TouchableOpacity>
       <View style={styles.item}>
         <Logo width={125} height={125} />
       </View>
@@ -50,24 +56,27 @@ function DirectorySpecialists({ zone }: { zone: Zone }) {
           {zone.zone_name}
         </Button>
       </View>
-      {/* <DataFilterActions /> */}
       <SpecialistList data={directories} />
     </ScrollView>
   )
 }
 
 const styles = StyleSheet.create({
-  container: {
+  container: { flex: 1, alignItems: 'center', backgroundColor: '#FFFFFF', paddingHorizontal: 20, paddingTop: 30 },
+  backButton: {
+    flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
-    paddingTop: 0
+    justifyContent: 'flex-start',
+    width: '100%',
+    marginTop: 10,
+    marginBottom: 20
   },
-  item: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 20
+  backButtonText: {
+    color: '#6A1B9A',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginLeft: 10
   },
-  filterContainer: {}
+  item: { justifyContent: 'center', alignItems: 'center', marginTop: 20 }
 })
-
 export default DirectorySpecialists
