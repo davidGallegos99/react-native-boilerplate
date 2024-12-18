@@ -12,9 +12,8 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import { createStackNavigator } from '@react-navigation/stack'
 
 import DirectoryScreen from './Directory/DirectoryScreen'
-import Trivia from './Game/Trivia'
+import JuegosScreen from './Game/Menu'
 import { HomeScreen } from './HomeScreen'
-import JuegosScreen from './JuegosScreen'
 import ProfileInformation from './ProfileInformation'
 import VideosScreen from './VideosScreen'
 
@@ -27,11 +26,11 @@ export function TabNavigationBar() {
   const JuegosStackScreen = () => (
     <JuegosStack.Navigator>
       <JuegosStack.Screen
-        name='Trivia'
-        component={Trivia}
+        name='JuegosScreen'
+        component={JuegosScreen}
         options={{
           headerShown: false,
-          title: 'Trivia'
+          title: 'JuegosScreen'
         }}
       />
     </JuegosStack.Navigator>
@@ -89,7 +88,7 @@ export function TabNavigationBar() {
       })}
     >
       <Tab.Screen name='Videos' component={VideosScreen} />
-      <Tab.Screen name='Juegos' component={Trivia} />
+      <Tab.Screen name='Juegos' component={JuegosScreen} />
       <Tab.Screen name='Inicio' options={{ unmountOnBlur: true }} component={HomeScreen} />
       <Tab.Screen name='Directorio' component={DirectoryScreen} />
       <Tab.Screen name='Perfil' options={{ unmountOnBlur: true }} component={ProfileInformation} />

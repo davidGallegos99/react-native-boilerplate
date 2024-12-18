@@ -21,6 +21,8 @@ import WelcomeScreen from '@screens/WelcomeScreen'
 import { ProfileScreen } from '@screens/protected/ProfileScreen'
 import { TabNavigationBar } from '@screens/protected/TabNavigationBar'
 
+import GameNavigator from "@screens/protected/Game/App"
+
 import Loader from './ui/components/Loader'
 
 const App: React.FC = () => {
@@ -57,6 +59,8 @@ const App: React.FC = () => {
             {/* Ruta protegida */}
             <Stack.Screen name='Main' options={{ headerShown: false }} component={TabNavigationBar} />
             <Stack.Screen name='Calendar' options={{ headerShown: false }} component={ProfileScreen} />
+
+            <Stack.Screen name="Game" options={{headerShown:false}} component={GameNavigator} />
           </Stack.Navigator>
         </NavigationContainer>
       </PaperProvider>

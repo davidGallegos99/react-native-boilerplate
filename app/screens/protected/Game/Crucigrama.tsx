@@ -1,13 +1,25 @@
-import React, { useEffect, useRef, useState } from 'react'
-import { View, Text, Button, StyleSheet, Animated, ActivityIndicator, FlatList, TouchableOpacity, Image, BackHandler } from "react-native"
-import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native'
-import ReactNativeModal from "react-native-modal"
+import React, { useEffect, useState } from 'react'
+import { ActivityIndicator, Animated, FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+
+import AsyncStorage from '@react-native-async-storage/async-storage'
+import { useNavigation, useRoute } from '@react-navigation/native'
+import { StackNavigationProp } from '@react-navigation/stack'
+import ReactNativeModal from 'react-native-modal'
 import { useToast } from 'react-native-toast-notifications'
+
 import Loader from '@ui/components/Loader'
+
 import { getTrivia } from '@services/GetTrivias.service'
-import { ModalSalir } from "./src/components/modalSalir"
+
+import { RootStackParamList } from '@screens/RegisterScreen'
+
 import pC from './src/theme/colores'
 
+type ProfileScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Login'>
+
+interface Props {
+  navigation: ProfileScreenNavigationProp
+}
 const Trivia = () => {
   const toast = useToast()
   const [modalActivado, setModalActivado] = useState<boolean>(false)
@@ -22,32 +34,20 @@ const Trivia = () => {
   const [cantPreguntas, setCantPreguntas] = useState<number>(0)
   const [preguntas, setPreguntas] = useState<any[]>([])
   const [cantRespuestas, setCantRespuestas] = useState<number>(0)
-  const [fontSize, setfontSize] = useState(16)
-  const route = useRoute()
-  const navigation = useNavigation()
 
   const animacionMov = useState(new Animated.Value(-400))[0]
-  const animacionOpacidad = useState(new Animated.Value(0))[0]  
+  const animacionOpacidad = useState(new Animated.Value(0))[0]
+
+  const navigation = useNavigation()
+  const route = useRoute()
   const { idTrivia }: any = route.params || {}
-  const logoTrivia = require ('./src/logoColectivo.png')
+  console.log(idTrivia)
 
-  const [modalSalirVisible, setModalSalirVisible] = useState(false)
-  const cosasPendientes = useRef<any>(null)
-
-  const redimTexto = (event: any) => {
-    const { width, height } = event.nativeEvent.layout
-    setfontSize(Math.min(width, height) / 5)}
-
-    const controllerSalir = () => {
-      setModalSalirVisible(false)
-      navigation.goBack()
-    }
-    
-  const controllerNoSalir = () => {setModalSalirVisible(false)}
+  const logoTrivia = require('./src/logoColectivo.png')
 
   const obtenerDatos = async () => {
     try {
-      const resultado = await getTrivia(idTrivia)
+      const resultado = await getTrivia('1')
       setTrivia(resultado.data)
       setPreguntas(resultado.data.questions || [])
       setCantPreguntas(Object.keys(resultado.data.questions || {}).length)
@@ -64,25 +64,9 @@ const Trivia = () => {
     }
   }
 
-useEffect(() => {
-  obtenerDatos()
-}, [])
-
-useFocusEffect(
-  React.useCallback(() => {
-    const onBackPress = () => {
-      setModalSalirVisible(true)
-      return true
-    }
-    BackHandler.addEventListener('hardwareBackPress', onBackPress)
-
-    return () => {BackHandler.removeEventListener('hardwareBackPress', onBackPress)}
+  useEffect(() => {
+    obtenerDatos()
   }, [])
-)
-
-  const tareaTerminada = async () => {
-    console.log("hola")
-  }
 
   const siguiente = () => {
     setModalActivado(false)
@@ -108,14 +92,14 @@ useFocusEffect(
     }
   }
 
-  const clicRespuesta = async (index: number) => {
-    if (seleccionado.length == 0) {
+  const clicRespuesta = (index: number) => {
+    if (seleccionado.length === 0) {
       const arreglo = Array(trivia.questions[preguntaNumero]?.answers?.length || 0).fill(false)
       setSeleccionado(arreglo)
       setDesabilitado(arreglo)
     }
 
-    const nuevosEstados_1 = await new Promise<any[]>(resolve => {
+    return new Promise<any[]>(resolve => {
       setSeleccionado(prev => {
         const cantResp = getCantRespuestas()
         let nuevosEstados
@@ -130,42 +114,48 @@ useFocusEffect(
         resolve(nuevosEstados)
         return nuevosEstados
       })
+    }).then(nuevosEstados => {
+      setBotonValidar(nuevosEstados.some(valor => valor === true))
     })
-    setBotonValidar(nuevosEstados_1.filter((valor) => valor === true).length > 0 ? true : false)
   }
 
   const getCantRespuestas = (numero = preguntaNumero) => {
-    const cant = trivia.questions?.[numero]?.answers?.filter((respuesta: any) => respuesta.answer_option === 1).length || 0
-    setCantRespuestas(cant)
-    return cant
+    setCantRespuestas(
+      trivia.questions?.[numero]?.answers?.filter((respuesta: any) => respuesta.answer_option === 1).length || 0
+    )
+    return trivia.questions?.[numero]?.answers?.filter((respuesta: any) => respuesta.answer_option === 1).length || 0
   }
   const validarRespuesta = () => {
     setBotonValidar(false)
     let correcta = true
     const respuestas = trivia.questions?.[preguntaNumero]?.answers || []
     const incorrectas = Array(respuestas.length).fill(false)
-    const cant = respuestas.length
 
-    for (let i = 0; i < cant; i++){
-      if (seleccionado[i] && respuestas[i].answer_option == "1"){
-        setTextoCorrecta(respuestas[i].answer_description)
-      } else if (seleccionado[i]){incorrectas[i] = true}
-    }
-
-    for (let i = 0; i < cant; i++){
-      if (seleccionado[i] && incorrectas[i]){
-        const desab = desabilitado
+    respuestas.forEach((respuesta: any, i: number) => {
+      if (seleccionado[i] && respuesta.answer_option !== 1) {
+        incorrectas[i] = true
         correcta = false
-        desab[i] = true
-        setDesabilitado(desab)
-        setSeleccionado(Array(cant).fill(false))
+      } else if (seleccionado[i] && respuesta.answer_option === 1) {
+        setTextoCorrecta(respuesta.answer_description)
       }
-    }
+    })
 
     if (correcta) {
       setCorrectas(correctas + 1)
       setModalActivado(true)
+    } else {
+      setModalActivado(false)
+      toast.show('Respuesta incorrecta', {
+        type: 'error',
+        placement: 'top',
+        duration: 4000,
+        animationType: 'slide-in'
+      })
     }
+  }
+
+  const salir = () => {
+    // navigation.navigate('Inicio')
   }
 
   const empezartrivia = () => {
@@ -183,13 +173,8 @@ useFocusEffect(
 
   return (
     <View style={estilos.contenedorGeneral}>
-      <ModalSalir
-        modalSalirVisible = {modalSalirVisible}
-        controllerNoSalir = {controllerNoSalir}
-        controllerSalir = {controllerSalir}>
-      </ModalSalir>
       <ReactNativeModal
-        backdropOpacity={modalActivado ? 0.5 : 0}
+        backdropOpacity={0.5}
         isVisible={modalActivado}
         animationIn={'fadeIn'}
         animationOut={'fadeOut'}
@@ -200,7 +185,11 @@ useFocusEffect(
           <Text style={estilos.encabezado}>{textoCorrecta}</Text>
           <TouchableOpacity style={estilos.botonModal} onPress={modalCorrecta}>
             <Text style={estilos.botonModalTexto}>
-              {correctas === cantRespuestas && preguntaNumero != (cantPreguntas-1) ? "Siguiente pregunta" : preguntaNumero == (cantPreguntas-1) ? "Finalizar" : "Aceptar"}
+              {correctas === cantRespuestas && preguntaNumero != cantPreguntas - 1
+                ? 'Siguiente pregunta'
+                : preguntaNumero == cantPreguntas - 1
+                ? 'Finalizar'
+                : 'Aceptar'}
             </Text>
           </TouchableOpacity>
         </View>
@@ -208,33 +197,34 @@ useFocusEffect(
 
       {preguntaNumero >= 0 && preguntaNumero < cantPreguntas ? (
         <View style={estilos.contenedor}>
-          <View style={estilos.cabecera}>
-            <TouchableOpacity onPress={() => setModalSalirVisible(true)}>
+          {/* <View style={estilos.cabecera}>
+            <TouchableOpacity onPress={salir}>
               <View style={estilos.salirContenedor}>
                 <Text style={estilos.salirContenedorContenido}>X</Text>
               </View>
             </TouchableOpacity>
-          </View>
+          </View> */}
 
-          <Animated.View style={[estilos.cuerpo, { transform: [{ translateX: animacionMov }], opacity: animacionOpacidad }]}>
+          <Animated.View
+            style={[estilos.cuerpo, { transform: [{ translateX: animacionMov }], opacity: animacionOpacidad }]}
+          >
             <View style={estilos.preguntaContenedor}>
               <View style={estilos.progresoContenedor}>
                 <View style={estilos.progresoTextoContenedor}>
-                  <Text style={estilos.progresoTexto}>{preguntaNumero + 1} / {cantPreguntas}</Text>
+                  <Text style={estilos.progresoTexto}>
+                    {preguntaNumero + 1} / {cantPreguntas}
+                  </Text>
                 </View>
                 <View style={estilos.barraProgresoContenedor}>
                   <View style={estilos.barraProgresoFondo}>
-                    <View 
-                      style={[estilos.barraProgreso, 
-                      { width: `${((preguntaNumero + 1) / cantPreguntas) * 100}%`,
-                        backgroundColor: pC.terciario.claro + pC.transparencia[70 + Math.round(((preguntaNumero + 1) / cantPreguntas) * 30 / 5) * 5]
-                      }]}>
-                    </View>
+                    <View
+                      style={[estilos.barraProgreso, { width: `${((preguntaNumero + 1) / cantPreguntas) * 100}%` }]}
+                    ></View>
                   </View>
                 </View>
               </View>
-              <View style={estilos.preguntaContenedorTexto} onLayout={redimTexto}>
-                <Text style={[estilos.pCTT,{fontSize}]}>{preguntas[preguntaNumero].question_name}</Text>
+              <View style={estilos.preguntaContenedorTexto}>
+                <Text style={estilos.pCTT}>{preguntas[preguntaNumero].question_name}</Text>
               </View>
             </View>
             {cantRespuestas > 1 ? <Text style={estilos.pCTTCh}>Hay más de una respuesta</Text> : null}
@@ -246,14 +236,17 @@ useFocusEffect(
                   keyExtractor={item => item.id}
                   renderItem={({ item, index }) => (
                     <TouchableOpacity
-                      activeOpacity={0.80}
+                      activeOpacity={0.8}
                       disabled={desabilitado[index]}
                       style={[
                         estilos.respuesta,
                         desabilitado[index] && { backgroundColor: pC.primario.claro + pC.transparencia[50] },
                         seleccionado[index] && { backgroundColor: pC.primario.oscuro }
                       ]}
-                      onPress={() => {clicRespuesta(index)}}>
+                      onPress={() => {
+                        clicRespuesta(index)
+                      }}
+                    >
                       <Text style={estilos.respuestaTexto}>{item.answer_name}</Text>
                     </TouchableOpacity>
                   )}
@@ -262,7 +255,7 @@ useFocusEffect(
             </View>
             <View style={estilos.pieContenedor}>
               <TouchableOpacity
-                activeOpacity={0.80}
+                activeOpacity={0.8}
                 disabled={!botonValidar}
                 onPress={validarRespuesta}
                 style={[
@@ -291,7 +284,7 @@ useFocusEffect(
           <Image source={logoTrivia} style={estilos.logoTrivia} resizeMode='cover'></Image>
           <Text style={estilos.tituloFullTexto}>¡Felicidades!</Text>
           <Text style={estilos.tituloObjetivoTexto}>¡Has terminado la trivia!</Text>
-          <TouchableOpacity style={estilos.botonEmpezarContainer} onPress={tareaTerminada}>
+          <TouchableOpacity style={estilos.botonEmpezarContainer} onPress={salir}>
             <View style={estilos.botonEmpezar}>
               <Text style={estilos.botonEmpezarTexto}>Finalizar trivia</Text>
             </View>
@@ -371,7 +364,7 @@ const estilos = StyleSheet.create({
     borderRadius: 20,
     paddingHorizontal: 20,
     width: '100%',
-    margin: '5%',
+    // margin: '5%',
     backgroundColor: pC.terciario.claro + pC.transparencia[50],
     flex: 1,
     justifyContent: 'center',
@@ -395,8 +388,8 @@ const estilos = StyleSheet.create({
   },
 
   logoTrivia: {
-    width: 200,
-    height: 200,
+    width: 200, // Quita las comillas
+    height: 200, // Quita las comillas
     borderRadius: 50,
     marginBottom: 40
   },
@@ -461,7 +454,8 @@ const estilos = StyleSheet.create({
 
   cuerpo: {
     flex: 1,
-    marginTop: 20,
+    marginTop: 10,
+    justifyContent: 'flex-start'
   },
 
   preguntaContenedor: {
@@ -470,7 +464,7 @@ const estilos = StyleSheet.create({
     height: '25%',
     backgroundColor: pC.primario.DEFAULT + pC.transparencia[50],
     borderRadius: 30,
-    padding: 20,
+    padding: 20
   },
 
   progresoContenedor: {
@@ -512,13 +506,13 @@ const estilos = StyleSheet.create({
   barraProgreso: {
     height: '100%',
     borderRadius: 20,
+    backgroundColor: pC.terciario.claro + pC.transparencia[90]
   },
 
   preguntaContenedorTexto: {
     justifyContent: 'center',
     width: '100%',
-    height: '70%',
-    margin:5
+    height: '70%'
   },
 
   pCTT: {
@@ -529,31 +523,34 @@ const estilos = StyleSheet.create({
   },
 
   pCTTCh: {
+    fontSize: 13,
+    margin: 3,
     textAlign: 'center',
     color: pC.primario.claro,
     fontWeight: '500'
   },
 
   respuestasContenedor: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    // backgroundColor: 'black',
+    paddingTop: 20,
+    height: 'auto' // Cambia el tamaño basado en el contenido
+    // o utiliza un valor específico como:
+    // maxHeight: '70%',
   },
-
   respuestasLista: {
     width: '100%',
-    alignItems: 'center',
     justifyContent: 'center',
+    alignItems: 'center'
   },
 
   respuesta: {
-    margin:10,
+    margin: 5,
     backgroundColor: pC.primario.DEFAULT + pC.transparencia[90],
     borderRadius: 10,
     padding: 15,
-    minWidth:"85%",
-    maxWidth:"85%",
-    flex:1,
+    width: '100%',
     alignSelf: 'center',
     alignItems: 'center'
   },
@@ -565,23 +562,22 @@ const estilos = StyleSheet.create({
     textAlign: 'center'
   },
   pieContenedor: {
-    height:"10%",
-    alignItems:"center",
-    bottom:"-3%",
-    start:"25%",
-    justifyContent:"center",
-    position:"absolute",
+    justifyContent: 'center',
+    alignItems: 'center',
+    // padding: 10,
+    width: '100%',
+    height: '45%'
   },
   botonPie: {
-    width:180,
-    padding:20,
-    borderTopLeftRadius: 30,
-    borderBottomLeftRadius: 0,
-    borderTopRightRadius: 30,
-    borderBottomRightRadius: 0,
-    backgroundColor:pC.secundario.DEFAULT+pC.transparencia[30],
-    justifyContent:"center",
-    alignItems:"center",
+    width: 180,
+    padding: 20,
+    borderRadius: 10,
+
+    // borderStartStartRadius: 30,
+    // borderEndStartRadius: 30,
+    backgroundColor: pC.secundario.DEFAULT + pC.transparencia[30],
+    justifyContent: 'center',
+    alignItems: 'center'
   },
   botonPieTexto: {
     textAlign: 'center',
