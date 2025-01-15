@@ -31,6 +31,7 @@ const ProfileInformation = ({ navigation }: Props) => {
   const [userInformation, setUserInformation] = useState<IGetGeneralUser | null>(null)
   const [loading, setLoading] = useState<boolean>(true)
   const [showUserForm, setShowUserForm] = useState<boolean>(false)
+  const [showProtocols, setShowProtocols] = useState<boolean>(false)
   const [selectedAvatar, setselectedAvatar] = useState<string | undefined>()
 
   const handleLogout = async () => {
@@ -44,6 +45,7 @@ const ProfileInformation = ({ navigation }: Props) => {
   }
 
   const handlePersonalInfo = () => setShowUserForm(true)
+  const handleProcotols = () => setShowProtocols(true)
 
   const handleCalendar = () => {
     navigation.navigate('Calendar')
@@ -212,7 +214,7 @@ const ProfileInformation = ({ navigation }: Props) => {
                 {userInformation?.data?.gender?.id == 2 && (
                   <TouchableOpacity style={styles.button} onPress={handleCalendar}>
                     <Icon name='calendar-today' size={45} color='#6A1B9A' />
-                    <Text style={styles.buttonText}>Calendario Menstrual</Text>
+                    <Text style={styles.buttonText}>Calendario Menstrual/Hormonal</Text>
                   </TouchableOpacity>
                 )}
               </View>
@@ -245,20 +247,20 @@ const styles = StyleSheet.create({
     backgroundColor: '#6A1B9A'
   },
   contentContainer: {
-    flex: 1, // Hace que el contenedor principal tome todo el espacio disponible
-    justifyContent: 'flex-start', // Inicia el contenido desde arriba
+    flex: 1,
+    justifyContent: 'flex-start',
     alignItems: 'center',
-    paddingBottom: 20 // Espacio general al final
+    paddingBottom: 20
   },
 
   gender2: {
-    justifyContent: 'space-between', // Distribuye el contenido equitativamente
-    paddingBottom: 100 // Espacio extra si genderId es 2
+    justifyContent: 'space-between',
+    paddingBottom: 100
   },
 
   default: {
-    justifyContent: 'center', // Centra el contenido en la pantalla
-    paddingBottom: 200 // Espacio extra si genderId no es 2
+    justifyContent: 'center',
+    paddingBottom: 200
   },
   loaderContainer: {
     flex: 1,

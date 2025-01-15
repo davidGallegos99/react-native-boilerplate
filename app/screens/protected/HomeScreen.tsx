@@ -1,6 +1,6 @@
 /* eslint-disable react-native/no-inline-styles */
 import { useEffect, useState } from 'react'
-import { FlatList, ScrollView, StyleSheet, View } from 'react-native'
+import { Dimensions, FlatList, Image, Modal, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native'
 
 import Logo from '../../../logo.svg'
 import Loader from '../../ui/components/Loader'
@@ -9,6 +9,7 @@ import { Emotion } from 'interfaces/Emotion.interface'
 import { HomeImage } from 'interfaces/GetHomeImgs.interface'
 
 import Carousel from '@ui/components/Carousel'
+import ImageModal from '@ui/components/ImageModal'
 import { SliderCard, SliderVideoCard } from '@ui/components/SliderCard'
 
 import { storeData } from '@services/AsyncStorage.service'
@@ -25,6 +26,7 @@ import img2 from '@assets/images/2.png'
 
 import ModalComponent from './Modal'
 
+const { width, height } = Dimensions.get('window')
 export function HomeScreen() {
   const renderItem = (item: HomeImage) => <SliderCard item={item} />
   const renderVideoItem = (item: Video) => <SliderVideoCard item={item} />
@@ -35,6 +37,9 @@ export function HomeScreen() {
   const [carrouselImgs, setCarrouselImgs] = useState<CarrouselImg[]>([])
   const [isModalVisible, setIsModalVisible] = useState(false)
   const [videos, setvideos] = useState<Video[]>([])
+  const [isImageModalVisible, setIsImageModalVisible] = useState(false)
+  const [selectedImage, setSelectedImage] = useState<string | null>(null)
+
   const handleEmotionSelect = async (emotion: string) => {
     try {
       const response = await createDailyEmotion({ emotion })
@@ -78,6 +83,10 @@ export function HomeScreen() {
     }
   }
 
+  const handleImagePress = (image: string) => {
+    setSelectedImage(image)
+    setIsImageModalVisible(true)
+  }
   const buildFirst = async () => {
     setFirstSlider([
       {
@@ -126,7 +135,6 @@ export function HomeScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      {/* Modal */}
       {isModalVisible && (
         <ModalComponent
           emotions={emotions}
@@ -140,14 +148,18 @@ export function HomeScreen() {
         <FlatList
           style={{ marginBottom: 30 }}
           data={imgsHome}
-          renderItem={({ item }) => renderItem(item)}
+          renderItem={({ item }) => (
+            <TouchableOpacity onPress={() => handleImagePress(item.image_file_content)}>
+              <SliderCard item={item} />
+            </TouchableOpacity>
+          )}
           keyExtractor={item => item.id.toString()}
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.listContainer}
         />
 
-        <Carousel data={carrouselImgs} />
+        <Carousel data={carrouselImgs} onImagePress={handleImagePress} />
         <FlatList
           style={{ marginTop: 30, marginBottom: 150 }}
           data={videos}
@@ -158,6 +170,7 @@ export function HomeScreen() {
           contentContainerStyle={styles.listContainer}
         />
       </View>
+      <ImageModal isVisible={isImageModalVisible} onClose={() => setIsImageModalVisible(false)} image={selectedImage} />
     </ScrollView>
   )
 }

@@ -12,6 +12,7 @@ export interface CarrouselImg {
   image_file_description: string
   image_file_status: number
   image_file_shows_in: number
+  color?: string
 }
 
 export const GetCarrouselImages = async (): Promise<IGetCarrouselImgs> => {

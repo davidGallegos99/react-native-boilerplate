@@ -8,11 +8,10 @@ import { CarrouselImg } from '@services/home/GetCrrouselmages.service'
 
 const { width } = Dimensions.get('window')
 
-const Carousel = ({ data }: { data: CarrouselImg[] }) => {
+const Carousel = ({ data, onImagePress }: { data: CarrouselImg[]; onImagePress: (image: string) => void }) => {
   const [currentIndex, setCurrentIndex] = useState(0)
   const flatListRef: any = useRef(null)
 
-  // Función para avanzar al siguiente elemento.
   const handleNext = () => {
     if (currentIndex < data.length - 1) {
       setCurrentIndex(currentIndex + 1)
@@ -20,7 +19,6 @@ const Carousel = ({ data }: { data: CarrouselImg[] }) => {
     }
   }
 
-  // Función para retroceder al elemento anterior.
   const handlePrev = () => {
     if (currentIndex > 0) {
       setCurrentIndex(currentIndex - 1)
@@ -28,29 +26,28 @@ const Carousel = ({ data }: { data: CarrouselImg[] }) => {
     }
   }
 
-  // Renderiza cada ítem del carrusel.
-  const renderItem = ({ item }: any) => (
-    <View style={[styles.item, { backgroundColor: item.color }]}>
+  const renderItem = ({ item }: { item: CarrouselImg }) => (
+    <TouchableOpacity
+      style={[styles.item, { backgroundColor: item.color || '#FFFFFF' }]}
+      onPress={() => onImagePress(item.image_file_content)}
+    >
       <Image
-        // eslint-disable-next-line react-native/no-inline-styles
         style={{ width: '100%', height: '100%' }}
         source={{
           uri: item.image_file_content
         }}
       />
-    </View>
+    </TouchableOpacity>
   )
 
   return (
     <ScrollView horizontal style={styles.container}>
-      {/* Flechas */}
       <TouchableOpacity onPress={handlePrev} style={{ ...styles.arrow, ...styles.arrowLeft }}>
         <Arrow style={{ transform: [{ rotate: '180deg' }] }} width={12} height={12} />
       </TouchableOpacity>
       <TouchableOpacity onPress={handleNext} style={{ ...styles.arrow, ...styles.arrowRight }}>
         <Arrow width={12} height={12} />
       </TouchableOpacity>
-      {/* Carrusel */}
       <FlatList
         ref={flatListRef}
         data={data}
@@ -86,10 +83,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center'
   },
-  itemText: {
-    fontSize: 24,
-    color: '#fff'
-  },
   arrowLeft: {
     left: 10,
     paddingRight: 2
@@ -110,10 +103,6 @@ const styles = StyleSheet.create({
     top: width * 0.2,
     position: 'absolute',
     zIndex: 1000
-  },
-  arrowText: {
-    fontSize: 18,
-    color: 'white'
   }
 })
 
