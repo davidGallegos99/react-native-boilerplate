@@ -27,7 +27,6 @@ function DirectorySpecialists({ zone, goBack }: DirectorySpecialistsProps) {
   const getDirectories = async () => {
     try {
       const res = await GetDirectoriesByZone(zone)
-      console.log('🚀 ~ getDirectories ~ res:', res)
       setdirectories(res.data)
     } catch (error) {
     } finally {

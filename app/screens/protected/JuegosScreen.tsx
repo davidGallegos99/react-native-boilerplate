@@ -1,104 +1,73 @@
-import React, { useEffect, useState } from 'react'
-import { Module, StyleSheet, Text, View } from 'react-native'
+import React from 'react'
+import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 
-import { GetModules } from '@services/Modules/GetModules.service'
+import Logo from '../../../logo.svg'
+import { StackNavigationProp } from '@react-navigation/stack'
+import { ScrollView } from 'react-native-gesture-handler'
 
-interface CardProps {
-  title?: string
-  backgroundColor?: string
-  style?: object
+import { RootStackParamList } from '@screens/SignUpOptsScreen'
+
+type RegisterScreenNavigationProp = StackNavigationProp<RootStackParamList, 'TriviaScreen'>
+interface Props {
+  navigation: RegisterScreenNavigationProp
 }
-
-const Card: React.FC<CardProps> = ({ title, backgroundColor = '#F8F7FF', style }) => (
-  <View style={[styles.card, { backgroundColor }, style]}>{title && <Text style={styles.cardText}>{title}</Text>}</View>
-)
-
-const ModuleCards: React.FC = () => {
-  const [modulos, setmodulos] = useState<Module[]>([])
-
-  const getModules = async () => {
-    const res = await GetModules()
-    setmodulos(res.data)
-  }
-
-  useEffect(() => {
-    // getModules()
-  }, [])
-
+function LudotecaScreen({ navigation }: Props) {
   return (
-    <View style={styles.container}>
-      {/* Main module card */}
-      <View style={styles.headerContainer}>
-        <Card title='MODULO 1' style={styles.mainCard} />
+    <ScrollView contentContainerStyle={styles.container}>
+      <View style={styles.logoContainer}>
+        <Logo width={125} height={125} />
       </View>
-
-      {/* Grid of cards */}
-      <View style={styles.gridContainer}>
-        <View style={styles.row}>
-          <Card title='SOCIO-EMOCIONES' style={styles.gridCard} />
-          <Card style={styles.gridCard} />
-          <Card style={styles.gridCard} />
-        </View>
-
-        <View style={styles.row}>
-          <Card style={styles.gridCard} />
-          <Card style={styles.gridCard} />
-          <Card style={styles.gridCard} />
-        </View>
+      <Text style={styles.title}>LUDOTECA</Text>
+      <View style={styles.optionsContainer}>
+        <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('TriviaModulesScreen')}>
+          <Text style={styles.cardText}>TRIVIAS</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('MainGame')}>
+          <Text style={styles.cardText}>JUEGOS</Text>
+        </TouchableOpacity>
       </View>
-    </View>
+    </ScrollView>
   )
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-    padding: 16
-  },
-  headerContainer: {
-    flex: 0.4,
+    backgroundColor: '#FFFFFF',
     alignItems: 'center',
-    justifyContent: 'center'
+    justifyContent: 'center',
+    paddingHorizontal: 20
   },
-  mainCard: {
-    width: '90%',
-    height: '100%'
+  logoContainer: {
+    marginBottom: 20
   },
-  gridContainer: {
-    flex: 0.6,
-    marginTop: 16
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#FF6600',
+    marginBottom: 30
   },
-  row: {
-    flex: 0.4, // Ahora cada fila ocupa 40% del espacio disponible en gridContainer
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 16
-  },
-  gridCard: {
-    flex: 0.3,
-    height: '100%' // Ocupa todo el alto disponible de la fila
+  optionsContainer: {
+    width: '100%'
   },
   card: {
-    borderRadius: 12,
-    padding: 12,
-    justifyContent: 'center',
+    backgroundColor: '#EDE7FE',
+    height: '33%',
+    borderRadius: 10,
     alignItems: 'center',
-    elevation: 2,
+    justifyContent: 'center',
+    marginBottom: 20,
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 5
   },
   cardText: {
-    color: '#6B45BC',
-    fontSize: 14,
+    fontSize: 18,
     fontWeight: 'bold',
-    textAlign: 'center'
+    color: '#4A148C'
   }
 })
 
-export default ModuleCards
+export default LudotecaScreen

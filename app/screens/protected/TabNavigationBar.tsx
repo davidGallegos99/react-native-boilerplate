@@ -14,6 +14,7 @@ import { createStackNavigator } from '@react-navigation/stack'
 import DirectoryScreen from './Directory/DirectoryScreen'
 import JuegosScreen from './Game/Menu'
 import { HomeScreen } from './HomeScreen'
+import ModuleCards from './JuegosScreen'
 import ProfileInformation from './ProfileInformation'
 import VideosScreen from './VideosScreen'
 
@@ -36,22 +37,22 @@ export function TabNavigationBar() {
     </JuegosStack.Navigator>
   )
 
-  useEffect(() => {
-    const logAllStorageItems = async () => {
-      try {
-        const keys = await AsyncStorage.getAllKeys()
-        if (keys.length === 0) {
-          return
-        }
-        const items = await AsyncStorage.multiGet(keys)
-        items.forEach(([key, value]) => {
-          console.log(`Clave: ${key}, Valor: ${value}`)
-        })
-      } catch (error) {
-        console.error('🚀 ~ Error al obtener los datos de AsyncStorage:', error)
+  const logAllStorageItems = async () => {
+    try {
+      const keys = await AsyncStorage.getAllKeys()
+      if (keys.length === 0) {
+        return
       }
+      const items = await AsyncStorage.multiGet(keys)
+      items.forEach(([key, value]) => {
+        console.log(`Clave: ${key}, Valor: ${value}`)
+      })
+    } catch (error) {
+      console.error('🚀 ~ Error al obtener los datos de AsyncStorage:', error)
     }
-    logAllStorageItems()
+  }
+  useEffect(() => {
+    // logAllStorageItems()
   }, [])
 
   return (
@@ -88,7 +89,7 @@ export function TabNavigationBar() {
       })}
     >
       <Tab.Screen name='Videos' component={VideosScreen} />
-      <Tab.Screen name='Juegos' component={JuegosScreen} />
+      <Tab.Screen name='Juegos' component={ModuleCards} />
       <Tab.Screen name='Inicio' options={{ unmountOnBlur: true }} component={HomeScreen} />
       <Tab.Screen name='Directorio' component={DirectoryScreen} />
       <Tab.Screen name='Perfil' options={{ unmountOnBlur: true }} component={ProfileInformation} />

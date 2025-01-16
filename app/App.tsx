@@ -16,17 +16,20 @@ import Description2Screen from '@screens/Description2'
 import Description3Screen from '@screens/Description3'
 import LoginScreen from '@screens/LoginScreen'
 import RegisterScreen from '@screens/RegisterScreen'
-import SignUpOptsScreen from '@screens/SignUpOptsScreen'
+import SignUpOptsScreen, { RootStackParamList } from '@screens/SignUpOptsScreen'
 import WelcomeScreen from '@screens/WelcomeScreen'
+import GameNavigator from '@screens/protected/Game/App'
 import { ProfileScreen } from '@screens/protected/ProfileScreen'
 import { TabNavigationBar } from '@screens/protected/TabNavigationBar'
+import TriviaDetailsScreen from '@screens/protected/TriviaDetailsScreen'
+import TriviaModulesScreen from '@screens/protected/TriviaModulesScreen'
 
-import GameNavigator from "@screens/protected/Game/App"
-
+import Menu from './screens/protected/Game/Menu'
 import Loader from './ui/components/Loader'
 
 const App: React.FC = () => {
-  const Stack = createStackNavigator()
+  const Stack = createStackNavigator<RootStackParamList>()
+
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null)
 
   useEffect(() => {
@@ -55,12 +58,14 @@ const App: React.FC = () => {
             <Stack.Screen name='Description1' options={{ headerShown: false }} component={Description1Screen} />
             <Stack.Screen name='Description2' options={{ headerShown: false }} component={Description2Screen} />
             <Stack.Screen name='Description3' options={{ headerShown: false }} component={Description3Screen} />
+            <Stack.Screen name='TriviaModulesScreen' options={{ headerShown: false }} component={TriviaModulesScreen} />
+            <Stack.Screen name='TriviaDetails' options={{ headerShown: false }} component={TriviaDetailsScreen} />
 
             {/* Ruta protegida */}
             <Stack.Screen name='Main' options={{ headerShown: false }} component={TabNavigationBar} />
             <Stack.Screen name='Calendar' options={{ headerShown: false }} component={ProfileScreen} />
-
-            <Stack.Screen name="Game" options={{headerShown:false}} component={GameNavigator} />
+            <Stack.Screen name='MainGame' options={{ headerShown: false }} component={Menu} />
+            <Stack.Screen name='Game' options={{ headerShown: false }} component={GameNavigator} />
           </Stack.Navigator>
         </NavigationContainer>
       </PaperProvider>

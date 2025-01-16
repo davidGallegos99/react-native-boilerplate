@@ -81,8 +81,10 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     alignSelf: 'flex-end',
-    padding: 10,
-    marginRight: -10
+    // padding: -20
+    marginRight: -10,
+    marginTop: -10,
+    marginBottom: 20
   },
   closeButtonText: {
     fontSize: 16,
@@ -94,7 +96,8 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#4A154B',
     marginBottom: 20,
-    textAlign: 'center'
+    textAlign: 'center',
+    marginTop: -35
   },
   emotionContainer: {
     flexDirection: 'row',

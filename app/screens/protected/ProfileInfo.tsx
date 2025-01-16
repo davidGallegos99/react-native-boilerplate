@@ -170,7 +170,7 @@ const styles = StyleSheet.create({
   formContainer: {
     padding: 20,
     alignItems: 'center',
-    backgroundColor: '#F8F8F8',
+    backgroundColor: '#F8F8F8 !important',
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
     justifyContent: 'flex-start', // Cambiado de 'space-evenly' a 'flex-start'

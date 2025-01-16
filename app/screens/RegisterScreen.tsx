@@ -26,7 +26,13 @@ export type RootStackParamList = {
   Description1: undefined
   Description2: undefined
   Calendar: undefined
-  Juegos: { idTrivia: number } // Nueva ruta con parámetros
+  Juegos: { idTrivia: number }
+  TriviaModulesScreen: undefined
+  TriviaScreen: undefined
+  TriviaDetails: {
+    moduleName: string
+    trivias: { id: number; trivia_name: string }[]
+  }
 }
 
 type RegisterScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Register'>

@@ -72,7 +72,6 @@ const ProfileInformation = ({ navigation }: Props) => {
 
     try {
       const token = await AsyncStorage.getItem('jwt')
-      console.log('Token:', token)
 
       const response = await fetch('https://includ.app/api/auth/profile/avatar', {
         method: 'POST',
@@ -102,8 +101,8 @@ const ProfileInformation = ({ navigation }: Props) => {
         throw new Error('El servidor no devolvió la URL de la imagen.')
       }
     } catch (error) {
-      toast.show('Error al subir la imagen.', {
-        type: 'error',
+      toast.show('Imagen demasiado pesada.', {
+        type: 'danger',
         placement: 'top',
         duration: 4000,
         animationType: 'slide-in'
