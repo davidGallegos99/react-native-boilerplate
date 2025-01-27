@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { View, Text, Button, StyleSheet, Animated, ActivityIndicator, FlatList, TouchableOpacity, Image, BackHandler } from "react-native"
+import { View, Text, Button, StyleSheet, Animated, ActivityIndicator, FlatList, TouchableOpacity, Image, BackHandler, Dimensions } from "react-native"
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native'
 import ReactNativeModal from "react-native-modal"
 import { useToast } from 'react-native-toast-notifications'
@@ -7,9 +7,14 @@ import Loader from '@ui/components/Loader'
 import { getTrivia } from '@services/GetTrivias.service'
 import { ModalSalir } from "./src/components/modalSalir"
 import pC from './src/theme/colores'
+import ConfettiCannon from 'react-native-confetti-cannon'
+import Orientation from 'react-native-orientation-locker'
+
+const { width, height } = Dimensions.get('window')
 
 const Trivia = () => {
   const toast = useToast()
+  const [mostrarConfetti, setMostrarConfetti] = useState(false)
   const [modalActivado, setModalActivado] = useState<boolean>(false)
   const [botonValidar, setBotonValidar] = useState<boolean>(false)
   const [correctas, setCorrectas] = useState<number>(0)
@@ -29,10 +34,9 @@ const Trivia = () => {
   const animacionMov = useState(new Animated.Value(-400))[0]
   const animacionOpacidad = useState(new Animated.Value(0))[0]  
   const { idTrivia }: any = route.params || {}
-  const logoTrivia = require ('./src/logoColectivo.png')
+  const logoColectivo = require ('./src/logoColectivo.png')
 
   const [modalSalirVisible, setModalSalirVisible] = useState(false)
-  const cosasPendientes = useRef<any>(null)
 
   const redimTexto = (event: any) => {
     const { width, height } = event.nativeEvent.layout
@@ -41,6 +45,11 @@ const Trivia = () => {
     const controllerSalir = () => {
       setModalSalirVisible(false)
       navigation.goBack()
+    }
+
+    const iniciarConfetti = () => {
+      setMostrarConfetti(true)
+      //setTimeout(() => setMostrarConfetti(false), 10000)
     }
     
   const controllerNoSalir = () => {setModalSalirVisible(false)}
@@ -65,7 +74,10 @@ const Trivia = () => {
   }
 
 useEffect(() => {
+  Orientation.lockToPortrait()
   obtenerDatos()
+
+  return () => {Orientation.unlockAllOrientations()}
 }, [])
 
 useFocusEffect(
@@ -81,11 +93,12 @@ useFocusEffect(
 )
 
   const tareaTerminada = async () => {
-    console.log("hola")
+    navigation.goBack()
   }
 
   const siguiente = () => {
     setModalActivado(false)
+    setMostrarConfetti(false)
     if (preguntaNumero < cantPreguntas - 1) {
       Animated.parallel([
         Animated.timing(animacionMov, { toValue: -500, duration: 400, useNativeDriver: true }),
@@ -103,6 +116,8 @@ useFocusEffect(
           Animated.timing(animacionOpacidad, { toValue: 1, duration: 400, useNativeDriver: true })
         ]).start()
       })
+    } else if (preguntaNumero == cantPreguntas - 1) {
+      iniciarConfetti()
     } else {
       setPreguntaNumero(preguntaNumero + 1)
     }
@@ -165,12 +180,14 @@ useFocusEffect(
     if (correcta) {
       setCorrectas(correctas + 1)
       setModalActivado(true)
+      iniciarConfetti()
     }
   }
 
   const empezartrivia = () => {
     setPreguntaNumero(0)
     siguiente()
+    console.log(preguntas)
   }
 
   const modalCorrecta = () => {
@@ -183,6 +200,28 @@ useFocusEffect(
 
   return (
     <View style={estilos.contenedorGeneral}>
+      {mostrarConfetti && (
+        <View style={estilos.confetti}>
+          <ConfettiCannon
+            count={75}
+            origin={{ x: width/3, y: -25 }}
+            fallSpeed={3000}
+            autoStart={true}
+            explosionSpeed={350}
+            fadeOut={true}
+            autoStartDelay={0}>
+          </ConfettiCannon>
+          <ConfettiCannon
+            count={75}
+            origin={{ x: 2*width/3, y: -25 }}
+            fallSpeed={3000}
+            autoStart={true}
+            explosionSpeed={350}
+            fadeOut={true}
+            autoStartDelay={0}>
+          </ConfettiCannon>
+        </View>
+      )}
       <ModalSalir
         modalSalirVisible = {modalSalirVisible}
         controllerNoSalir = {controllerNoSalir}
@@ -196,7 +235,7 @@ useFocusEffect(
         style={estilos.modalContenedor}
       >
         <View style={estilos.modalContenido}>
-          <Image source={logoTrivia} style={estilos.logoModal} resizeMode='cover'></Image>
+          <Image source={logoColectivo} style={estilos.logoModal} resizeMode='cover'></Image>
           <Text style={estilos.encabezado}>{textoCorrecta}</Text>
           <TouchableOpacity style={estilos.botonModal} onPress={modalCorrecta}>
             <Text style={estilos.botonModalTexto}>
@@ -277,7 +316,7 @@ useFocusEffect(
         </View>
       ) : preguntaNumero < 0 ? (
         <View style={estilos.contenedorFull}>
-          <Image source={logoTrivia} style={estilos.logoTrivia} resizeMode='cover'></Image>
+          <Image source={logoColectivo} style={estilos.logoColectivo} resizeMode='cover'></Image>
           <Text style={estilos.tituloFullTexto}>{trivia.trivia_name}</Text>
           <Text style={estilos.tituloObjetivoTexto}>{trivia.trivia_objective}</Text>
           <TouchableOpacity style={estilos.botonEmpezarContainer} onPress={empezartrivia}>
@@ -288,8 +327,8 @@ useFocusEffect(
         </View>
       ) : (
         <View style={estilos.contenedorFull}>
-          <Image source={logoTrivia} style={estilos.logoTrivia} resizeMode='cover'></Image>
-          <Text style={estilos.tituloFullTexto}>¡Felicidades!</Text>
+          <Image source={logoColectivo} style={estilos.logoColectivo} resizeMode='cover'></Image>
+          <Text style={estilos.tituloFullTexto}>¡Felicidades! 🎉</Text>
           <Text style={estilos.tituloObjetivoTexto}>¡Has terminado la trivia!</Text>
           <TouchableOpacity style={estilos.botonEmpezarContainer} onPress={tareaTerminada}>
             <View style={estilos.botonEmpezar}>
@@ -303,6 +342,16 @@ useFocusEffect(
 }
 
 const estilos = StyleSheet.create({
+  confetti: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 9999,
+    elevation: 10,
+    pointerEvents: 'none'
+  },
   contenedorGeneral: {
     flex: 1,
     justifyContent: 'center',
@@ -370,7 +419,7 @@ const estilos = StyleSheet.create({
   contenedorFull: {
     borderRadius: 20,
     paddingHorizontal: 20,
-    width: '100%',
+    width: '90%',
     margin: '5%',
     backgroundColor: pC.terciario.claro + pC.transparencia[50],
     flex: 1,
@@ -394,7 +443,7 @@ const estilos = StyleSheet.create({
     fontWeight: 'bold'
   },
 
-  logoTrivia: {
+  logoColectivo: {
     width: 200,
     height: 200,
     borderRadius: 50,
@@ -442,13 +491,18 @@ const estilos = StyleSheet.create({
     justifyContent: 'center'
   },
 
+  textoCabeceraStatus: {
+    fontSize:20
+  },
+
   salirContenedor: {
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: '5%',
     paddingVertical: '2%',
     marginVertical: 10,
-    width: '20%',
+    width: 55,
+    height:55,
     borderRadius: 10,
     backgroundColor: pC.primario.DEFAULT + pC.transparencia[30]
   },
@@ -458,6 +512,8 @@ const estilos = StyleSheet.create({
     fontWeight: 'bold',
     color: pC.primario.DEFAULT
   },
+
+  cabeceraContenedorDerecha:{},
 
   cuerpo: {
     flex: 1,
