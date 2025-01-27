@@ -1,5 +1,5 @@
 import api from '../../config/axiosConfig'
-import { ICreateUser } from 'interfaces/CreateUser.interface'
+import { ICreateUser, IEmail } from 'interfaces/CreateUser.interface'
 
 export const createUser = async (userData: ICreateUser) => {
   try {
@@ -7,6 +7,16 @@ export const createUser = async (userData: ICreateUser) => {
     // AsyncStorage.setItem('@storage_key', response.data.);
     return response.data
   } catch (error: any) {
-    throw error 
+    throw error
+  }
+}
+
+export const verifyEmail = async (userEmail: IEmail) => {
+  try {
+    const response = await api.post('/api/verify-email', userEmail)
+
+    return response.data
+  } catch (error: any) {
+    return error.response.data
   }
 }

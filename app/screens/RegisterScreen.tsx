@@ -14,7 +14,7 @@ import { ThirdStepForm } from '@ui/Forms/Register/ThirdStepForm'
 import { storeData } from '@services/AsyncStorage.service'
 import { createUserInfo } from '@services/auth/createUserInfo'
 import { createUserInterest } from '@services/auth/createUserInterests'
-import { createUser } from '@services/auth/registerUser'
+import { createUser, verifyEmail } from '@services/auth/registerUser'
 
 export type RootStackParamList = {
   Register: undefined
@@ -79,13 +79,23 @@ function RegisterScreen({ navigation }: Props) {
     }
   }
 
-  const handleFirstStep = (data: User) => {
-    setregisterData(prevState => ({
-      ...prevState,
-      ...data
-    }))
-    setUser(data)
-    setstep(2)
+  const handleFirstStep = async (data: User) => {
+    const response = await verifyEmail({ email: data?.email })
+    if (response.message === 'El valor del campo email ya está en uso.') {
+      toast.show('Este correo ya está en uso.', {
+        type: 'danger',
+        placement: 'top',
+        duration: 4000,
+        animationType: 'slide-in'
+      })
+    } else {
+      setregisterData(prevState => ({
+        ...prevState,
+        ...data
+      }))
+      setUser(data)
+      setstep(2)
+    }
   }
 
   const handleSecondStep = (data: User) => {

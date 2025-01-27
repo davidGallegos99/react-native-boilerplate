@@ -238,8 +238,19 @@ const ProfileInformation = ({ navigation }: Props) => {
                   <Text style={styles.optionText}>Calendario Menstrual/Hormonal</Text>
                 </TouchableOpacity>
               </View>
+              <View style={styles.optionContainer}>
+                <TouchableOpacity style={styles.optionButton} onPress={() => setShowProtocols(true)}>
+                  <Icon name='security' size={20} color='#6A1B9A' />
+                  <Text style={styles.optionText}>Protocolos de seguridad</Text>
+                </TouchableOpacity>
 
-              <View style={styles.footer}>
+                <TouchableOpacity style={styles.optionButton} onPress={handleLogout}>
+                  <Icon name='logout' size={20} color='#6A1B9A' />
+                  <Text style={styles.optionText}>Cerrar Sesión</Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* <View style={styles.footer}>
                 <TouchableOpacity style={styles.footerButton} onPress={() => setShowProtocols(true)}>
                   <Icon name='security' size={20} color='#6A1B9A' />
                   <Text style={styles.footerText}>Protocolos de seguridad</Text>
@@ -249,7 +260,7 @@ const ProfileInformation = ({ navigation }: Props) => {
                   <Icon name='logout' size={20} color='#6A1B9A' />
                   <Text style={styles.footerText}>Cerrar Sesión</Text>
                 </TouchableOpacity>
-              </View>
+              </View> */}
             </>
           ) : (
             <ProfileInfo userInformation={userInformation} onSubmit={updateInformation} />
@@ -354,6 +365,8 @@ const styles = StyleSheet.create({
     alignItems: 'center'
   },
   optionContainer: {
+    display: 'flex',
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     width: screenWidth * 0.9,
@@ -367,7 +380,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 20,
     borderRadius: 15,
-    width: '50%',
+    width: '40%',
     elevation: 5, // Para sombras en Android
     shadowColor: '#000', // Para sombras en iOS
     shadowOpacity: 0.1,

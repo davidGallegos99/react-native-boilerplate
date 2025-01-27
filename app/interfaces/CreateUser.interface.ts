@@ -53,3 +53,7 @@ export interface IResetPassword {
 export interface ICreateUserInterests {
   interest_ids: number[]
 }
+
+export interface IEmail {
+  email: string
+}
