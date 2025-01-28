@@ -37,6 +37,9 @@ const Trivia = () => {
   const logoColectivo = require ('./src/logoColectivo.png')
 
   const [modalSalirVisible, setModalSalirVisible] = useState(false)
+  const animacionBoton = useRef(new Animated.Value(0)).current
+  const opacidadBoton = useRef(new Animated.Value(0)).current
+
 
   const redimTexto = (event: any) => {
     const { width, height } = event.nativeEvent.layout
@@ -91,6 +94,21 @@ useFocusEffect(
     return () => {BackHandler.removeEventListener('hardwareBackPress', onBackPress)}
   }, [])
 )
+
+useEffect(() => {
+  Animated.parallel([
+    Animated.timing(animacionBoton, {
+      toValue: botonValidar ? 50 : 100,
+      duration: 300,
+      useNativeDriver: true
+    }),
+    Animated.timing(opacidadBoton, {
+      toValue: botonValidar ? 1 : 0.5,
+      duration: 300,
+      useNativeDriver: true
+    })
+  ]).start()
+}, [botonValidar])
 
   const tareaTerminada = async () => {
     navigation.goBack()
@@ -187,7 +205,6 @@ useFocusEffect(
   const empezartrivia = () => {
     setPreguntaNumero(0)
     siguiente()
-    console.log(preguntas)
   }
 
   const modalCorrecta = () => {
@@ -300,17 +317,21 @@ useFocusEffect(
               </View>
             </View>
             <View style={estilos.pieContenedor}>
-              <TouchableOpacity
-                activeOpacity={0.80}
-                disabled={!botonValidar}
-                onPress={validarRespuesta}
+              <Animated.View
+                pointerEvents="box-none"
                 style={[
-                  estilos.botonPie,
-                  botonValidar && { backgroundColor: pC.secundario.DEFAULT + pC.transparencia[70] }
+                  { transform: [{ translateY: animacionBoton }], opacity: opacidadBoton }
                 ]}
               >
-                <Text style={estilos.botonPieTexto}>Validar</Text>
-              </TouchableOpacity>
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  disabled={!botonValidar}
+                  onPress={validarRespuesta}
+                  style={estilos.botonPie}
+                >
+                  <Text style={estilos.botonPieTexto}>Validar</Text>
+                </TouchableOpacity>
+              </Animated.View>
             </View>
           </Animated.View>
         </View>
@@ -623,7 +644,7 @@ const estilos = StyleSheet.create({
   pieContenedor: {
     height:"10%",
     alignItems:"center",
-    bottom:"-3%",
+    bottom:"5%",
     start:"25%",
     justifyContent:"center",
     position:"absolute",
@@ -635,10 +656,12 @@ const estilos = StyleSheet.create({
     borderBottomLeftRadius: 0,
     borderTopRightRadius: 30,
     borderBottomRightRadius: 0,
-    backgroundColor:pC.secundario.DEFAULT+pC.transparencia[30],
     justifyContent:"center",
     alignItems:"center",
+    position:"absolute",
+    backgroundColor:pC.secundario.DEFAULT + pC.transparencia[85],
   },
+
   botonPieTexto: {
     textAlign: 'center',
     fontSize: 15,
