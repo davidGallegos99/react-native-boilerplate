@@ -1,315 +1,482 @@
-import React, { useEffect, useState } from 'react'
-import { ActivityIndicator, Animated, FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
-
-import AsyncStorage from '@react-native-async-storage/async-storage'
-import { useNavigation, useRoute } from '@react-navigation/native'
-import { StackNavigationProp } from '@react-navigation/stack'
-import ReactNativeModal from 'react-native-modal'
-import { useToast } from 'react-native-toast-notifications'
-
+import React, { useEffect, useMemo, useRef, useState } from 'react'
+import { View, Text, Button, StyleSheet, Animated, ActivityIndicator, FlatList, TouchableOpacity, Image, BackHandler, Dimensions } from "react-native"
+import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native'
+import ReactNativeModal from "react-native-modal"
 import Loader from '@ui/components/Loader'
-
-import { getTrivia } from '@services/GetTrivias.service'
-
-import { RootStackParamList } from '@screens/RegisterScreen'
-
+import { useToast } from 'react-native-toast-notifications'
+import { GestureDetector, Gesture } from "react-native-gesture-handler"
+import { runOnJS, useSharedValue } from 'react-native-reanimated'
+import { ModalSalir } from "./src/components/modalSalir"
 import pC from './src/theme/colores'
+import Orientation from 'react-native-orientation-locker'
+import ConfettiCannon from 'react-native-confetti-cannon'
 
-type ProfileScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Login'>
+const tamCelda = 34
+const bordeCelda = 1
+const { width, height } = Dimensions.get('window')
+const margenError = 5
 
-interface Props {
-  navigation: ProfileScreenNavigationProp
-}
-const Trivia = () => {
-  const toast = useToast()
-  const [modalActivado, setModalActivado] = useState<boolean>(false)
-  const [botonValidar, setBotonValidar] = useState<boolean>(false)
-  const [correctas, setCorrectas] = useState<number>(0)
-  const [textoCorrecta, setTextoCorrecta] = useState<string>('')
-  const [desabilitado, setDesabilitado] = useState<any[]>([])
-  const [seleccionado, setSeleccionado] = useState<any[]>([])
-  const [trivia, setTrivia] = useState<any>({})
-  const [preguntaNumero, setPreguntaNumero] = useState<number>(-1)
-  const [isLoading, setIsLoading] = useState<boolean>(true)
-  const [cantPreguntas, setCantPreguntas] = useState<number>(0)
-  const [preguntas, setPreguntas] = useState<any[]>([])
-  const [cantRespuestas, setCantRespuestas] = useState<number>(0)
-
-  const animacionMov = useState(new Animated.Value(-400))[0]
-  const animacionOpacidad = useState(new Animated.Value(0))[0]
-
-  const navigation = useNavigation()
+const Crucigrama = () => {
+  const [mostrarConfetti, setMostrarConfetti] = useState(false)
   const route = useRoute()
-  const { idTrivia }: any = route.params || {}
-  console.log(idTrivia)
+  const navigation = useNavigation()
+  const { idJuego }: any = route.params || {}
+  const logoColectivo = require ('./src/logoColectivo.png')
+  const [modalSalirVisible, setModalSalirVisible] = useState<boolean>(false)
+  const [cargando, setCargando] = useState<boolean>(true)
+  const [modalActivado, setModalActivado] = useState<boolean>(false)
 
-  const logoTrivia = require('./src/logoColectivo.png')
+  const tam = 10
+  const [timer,setTimer] = useState<number>(0)
+  const [enMarcha, setEnMarcha] = useState<boolean>(true)
 
-  const obtenerDatos = async () => {
-    try {
-      const resultado = await getTrivia('1')
-      setTrivia(resultado.data)
-      setPreguntas(resultado.data.questions || [])
-      setCantPreguntas(Object.keys(resultado.data.questions || {}).length)
-      setPreguntaNumero(-1)
-    } catch (error) {
-      toast.show('No se pudo obtener el juego.', {
-        type: 'danger',
-        placement: 'top',
-        duration: 4000,
-        animationType: 'slide-in'
-      })
-    } finally {
-      setIsLoading(false)
+  const [tabla, setTabla] = useState<string[][]>(Array.from({ length: tam }, () => Array(tam).fill("x")))
+  const [contenedorPos, setContenedorPos] = useState({ x: 0, y: 0 })
+
+  const [seleccionadas, setSeleccionadas] = useState(new Set())
+  const seleccionadasRef = useRef<Set<string>>(new Set())
+
+  const [sobreCelda, setSobreCelda] = useState(new Set())
+  const sobreCeldaRef = useRef<Set<string>>(new Set())
+  const sobreCeldaTimer = useRef<NodeJS.Timeout | null>(null)
+
+  let palabras = ['sexo', 'género', 'respeto', 'igualdad', 'diversidad', 'derechos', 'amor', 'libertad', 'consenso', 'cuidado', 'identidad', 'equidad', 'trans', 'lesbianas', 'bisexual', 'inclusión', 'orgullo', 'empoderar', 'feminismo', 'solidario', 'activismo', 'tolerancia', 'aceptación', 'visibilidad', 'dignidad', 'comunidad', 'valores', 'justicia', 'autonomía', 'educación', 'reconocer', 'protección', 'apoyo', 'colectivo', 'fraternidad', 'seguridad', 'sororidad', 'espectro', 'diverso', 'pride', 'lucha', 'acción', 'aceptar', 'hermandad', 'justo', 'fuerte', 'poder', 'libre', 'único', 'proteger', 'rebelde', 'voz', 'cambio', 'ser', 'gay', 'unidad', 'fraterna', 'pacífico', 'silencio', 'revolución', 'lesbiana', 'orgullosa', 'brillar', 'creer', 'educar', 'esperar', 'tolerar', 'fuerza', 'liderar', 'progreso', 'colectiva', 'inclusiva', 'respetar', 'volar', 'vibrar', 'latente']
+
+  const [elegidas, setElegidas] = useState<string[]>([])
+  const [elegidasRef, setElegidasRef] = useState<Set<string>>(new Set())
+  const [restantes, setRestantes] = useState<number>(0)
+  const [restantesDeselec, setRestantesDeselec] = useState<boolean[]>([])  
+
+  const controllerSalir = () => {
+    setModalSalirVisible(false)
+    navigation.goBack()
+  }
+
+  const controllerNoSalir = () => {setModalSalirVisible(false)}
+
+  const tareaTerminada = async () => {
+    navigation.goBack()
+  }
+
+  const actualizarSeleccionTemporal = (fila: number, columna: number) => {
+    seleccionadasRef.current.add(`${fila}-${columna}`)
+  }
+
+  const actualizarSobreCelda = (fila: number, columna: number) => {
+    const key = `${fila}-${columna}`
+    if (!sobreCeldaRef.current.has(key)) {
+      sobreCeldaRef.current.add(key)
+      if (!sobreCeldaTimer.current) {
+        sobreCeldaTimer.current = setTimeout(() => {
+          setSobreCelda(new Set(sobreCeldaRef.current))
+          sobreCeldaTimer.current = null
+        }, 50)
+      }
     }
   }
+
+  const limpiarSobreCelda = () => {
+    sobreCeldaRef.current.clear()
+    setSobreCelda(new Set())
+  }
+
+  const finalizarSeleccion = () => {  
+    const celdasSeleccionadas = Array.from(seleccionadasRef.current)
+    if (celdasSeleccionadas.length < 2) {
+      seleccionadasRef.current.clear()
+      return
+    }
+  
+    const filas = celdasSeleccionadas.map(celda => parseInt(celda.split('-')[0]))
+    const columnas = celdasSeleccionadas.map(celda => parseInt(celda.split('-')[1]))
+  
+    const esMismaFila = filas.every(fila => fila === filas[0])
+    const esMismaColumna = columnas.every(columna => columna === columnas[0])
+  
+    if (esMismaFila || esMismaColumna) {
+      if (esMismaColumna && filas[0] > filas[1]) filas.reverse()
+      if (esMismaFila && columnas[0] > columnas[1]) columnas.reverse()
+  
+      const palabraSel = celdasSeleccionadas.map((_, i) => tabla[filas[i]][columnas[i]]).join("")
+  
+      if (elegidasRef.has(palabraSel)) {
+        seleccionadasRef.current.clear()
+  
+        if (!modalActivado) {
+          setModalActivado(true)
+          setTimeout(() => setModalActivado(false), 1500)
+        }
+  
+        setRestantes(prev => prev - 1)
+        setSeleccionadas(prev => new Set([...prev, ...celdasSeleccionadas]))
+        setElegidasRef(prev => {
+          const nuevasElegidas = new Set(prev)
+          nuevasElegidas.delete(palabraSel)
+          return nuevasElegidas
+        })
+
+        setRestantesDeselec(prev => {
+          const nuevosRestantesDeselec = [...prev]
+          nuevosRestantesDeselec[elegidas.indexOf(palabraSel)] = true
+          return nuevosRestantesDeselec
+        })
+      }
+    }
+    seleccionadasRef.current.clear()
+  }  
 
   useEffect(() => {
-    obtenerDatos()
+    Orientation.lockToPortrait()
+    
+    const cargarTabla = async () => {
+      await llenarTabla(tam, tam)
+    }
+
+    cargarTabla().catch((error) => {
+      console.log("Error al cargar la tabla hmmta", error)
+    })
+
+    return () => {
+      Orientation.unlockAllOrientations()
+    }
   }, [])
 
-  const siguiente = () => {
-    setModalActivado(false)
-    if (preguntaNumero < cantPreguntas - 1) {
-      Animated.parallel([
-        Animated.timing(animacionMov, { toValue: -500, duration: 400, useNativeDriver: true }),
-        Animated.timing(animacionOpacidad, { toValue: 0, duration: 400, useNativeDriver: true })
-      ]).start(() => {
-        setDesabilitado([])
-        setSeleccionado([])
-        setCorrectas(0)
-        setPreguntaNumero(preguntaNumero + 1)
-        getCantRespuestas()
-        animacionMov.setValue(500)
-        animacionOpacidad.setValue(0)
-        Animated.parallel([
-          Animated.timing(animacionMov, { toValue: 0, duration: 400, useNativeDriver: true }),
-          Animated.timing(animacionOpacidad, { toValue: 1, duration: 400, useNativeDriver: true })
-        ]).start()
-      })
+  useEffect(() => {
+    let intervalo: NodeJS.Timeout
+    if (enMarcha) {
+      intervalo = setInterval(() => {
+        setTimer(timer => timer + 1)
+      }, 1000)
+    }
+
+    if (restantes === 0) {
+      setEnMarcha(false)
+      setMostrarConfetti(true)
     } else {
-      setPreguntaNumero(preguntaNumero + 1)
-    }
-  }
-
-  const clicRespuesta = (index: number) => {
-    if (seleccionado.length === 0) {
-      const arreglo = Array(trivia.questions[preguntaNumero]?.answers?.length || 0).fill(false)
-      setSeleccionado(arreglo)
-      setDesabilitado(arreglo)
+      setEnMarcha(true)
+      setMostrarConfetti(false)
     }
 
-    return new Promise<any[]>(resolve => {
-      setSeleccionado(prev => {
-        const cantResp = getCantRespuestas()
-        let nuevosEstados
+    return () => {
+      clearInterval(intervalo)
+    }
+  }, [restantes, enMarcha])
 
-        if (cantResp >= 1) {
-          nuevosEstados = prev.map((estado, otros) => (otros === index ? !estado : false))
-        } else {
-          nuevosEstados = [...prev]
-          nuevosEstados[index] = !nuevosEstados[index]
-        }
-
-        resolve(nuevosEstados)
-        return nuevosEstados
-      })
-    }).then(nuevosEstados => {
-      setBotonValidar(nuevosEstados.some(valor => valor === true))
-    })
-  }
-
-  const getCantRespuestas = (numero = preguntaNumero) => {
-    setCantRespuestas(
-      trivia.questions?.[numero]?.answers?.filter((respuesta: any) => respuesta.answer_option === 1).length || 0
-    )
-    return trivia.questions?.[numero]?.answers?.filter((respuesta: any) => respuesta.answer_option === 1).length || 0
-  }
-  const validarRespuesta = () => {
-    setBotonValidar(false)
-    let correcta = true
-    const respuestas = trivia.questions?.[preguntaNumero]?.answers || []
-    const incorrectas = Array(respuestas.length).fill(false)
-
-    respuestas.forEach((respuesta: any, i: number) => {
-      if (seleccionado[i] && respuesta.answer_option !== 1) {
-        incorrectas[i] = true
-        correcta = false
-      } else if (seleccionado[i] && respuesta.answer_option === 1) {
-        setTextoCorrecta(respuesta.answer_description)
+  useFocusEffect(
+    React.useCallback(() => {
+      const onBackPress = () => {
+        setModalSalirVisible(true)
+        return true
       }
-    })
+      BackHandler.addEventListener('hardwareBackPress', onBackPress)
 
-    if (correcta) {
-      setCorrectas(correctas + 1)
-      setModalActivado(true)
-    } else {
-      setModalActivado(false)
-      toast.show('Respuesta incorrecta', {
-        type: 'error',
-        placement: 'top',
-        duration: 4000,
-        animationType: 'slide-in'
-      })
+      return () => { BackHandler.removeEventListener('hardwareBackPress', onBackPress) }
+    }, [])
+  )
+
+  const generarLetras = () => {
+    const letras = 'ABCDEFGHIJKLMNÑOPQRSTUVWXYZ'
+    return letras[Math.floor(Math.random() * letras.length)]
+  }
+
+  const llenarTabla = async (filas: number, columnas: number) => {
+    try {  
+      const maxPalabras = Math.floor((filas + columnas) * 0.5)
+      const minPalabras = Math.max(5, Math.floor(maxPalabras * 0.4))
+      let numeroPal = Math.floor(Math.random() * (maxPalabras - minPalabras + 1)) + minPalabras
+      const nuevaTabla = Array.from({ length: filas }, () => Array.from({ length: columnas }, () => ""))
+  
+      const palabrasEle: string[] = []
+  
+      while (numeroPal > 0) {
+        palabras = [...palabras].sort(() => Math.random() - 0.5)
+
+        let largoPalabra = palabras[0].length
+        palabras[0] = palabras[0].toUpperCase()
+
+        const direccion = Math.random() < 0.5
+        let colocada = false
+
+        for (let intento = 0; intento < 100; intento++) {
+          const filaInicio = Math.floor(Math.random() * (filas - (direccion ? 0 : largoPalabra)))
+          const columnaInicio = Math.floor(Math.random() * (columnas - (direccion ? largoPalabra : 0)))
+
+          if (filaInicio < 0 || columnaInicio < 0) continue
+
+          let cabe = true
+
+          for (let i = 0; i < largoPalabra; i++) {
+            const fila = filaInicio + (direccion ? 0 : i)
+            const columna = columnaInicio + (direccion ? i : 0)
+
+            if (fila >= filas || columna >= columnas || fila < 0 || columna < 0) {
+              cabe = false
+              break
+            }
+
+            if (
+              nuevaTabla[fila][columna] !== "" &&
+              nuevaTabla[fila][columna] !== palabras[0][i]
+            ) {
+              cabe = false
+              break
+            }
+          }
+
+          if (cabe) {
+            for (let i = 0; i < largoPalabra; i++) {
+              const fila = filaInicio + (direccion ? 0 : i)
+              const columna = columnaInicio + (direccion ? i : 0)
+              nuevaTabla[fila][columna] = palabras[0][i]
+            }
+            colocada = true
+            palabrasEle.push(palabras[0])
+            numeroPal--
+            break
+          }
+        }
+        palabras = palabras.slice(1)
+      }
+  
+      for (let fila = 0; fila < filas; fila++) {
+        for (let columna = 0; columna < columnas; columna++) {
+          if (nuevaTabla[fila][columna] === "") {
+            nuevaTabla[fila][columna] = generarLetras()
+          }
+        }
+      }
+  
+      setTabla(nuevaTabla)
+      setElegidas(palabrasEle)
+      setElegidasRef(new Set(palabrasEle))
+    } catch (error) {
+      console.log("Error al llenar la tabla:", error)
     }
+  }  
+  
+
+  useEffect(() => {
+    setRestantes(elegidas.length)
+    setRestantesDeselec(Array(restantes).fill(false))
+    setCargando (false)
+    setSeleccionadas(new Set())
+    setSobreCelda(new Set())
+  }, [elegidas])
+
+  const sharedValues = useMemo(() => {
+    return Array.from({ length: tam }, () =>
+      Array.from({ length: tam }, () => ({
+        fila: { value: 0 },
+        columna: { value: 0 },
+      }))
+    )
+  }, [])
+
+  const generarGestoPan = (filaI: number, columnaI: number) => {
+    let ultimaFila = filaI
+    let ultimaColumna = columnaI
+  
+    return Gesture.Pan()
+      .onStart(() => {
+        ultimaFila = filaI
+        ultimaColumna = columnaI
+        runOnJS(limpiarSobreCelda)()
+        runOnJS(actualizarSeleccionTemporal)(filaI, columnaI)
+      })
+      .onUpdate((e) => {
+        'worklet'
+        const offsetX = e.translationX / tamCelda
+        const offsetY = e.translationY / tamCelda
+  
+        const nuevaFila = Math.min(
+          Math.max(Math.round(ultimaFila + offsetY), 0),
+          tam - 1
+        )
+        const nuevaColumna = Math.min(
+          Math.max(Math.round(ultimaColumna + offsetX), 0),
+          tam - 1
+        )
+  
+        const enMargen = Math.abs(e.translationX - offsetX * tamCelda) <= margenError &&
+                         Math.abs(e.translationY - offsetY * tamCelda) <= margenError
+  
+        if ((nuevaFila !== ultimaFila || nuevaColumna !== ultimaColumna) && enMargen) {
+          ultimaFila = nuevaFila
+          ultimaColumna = nuevaColumna
+          runOnJS(actualizarSeleccionTemporal)(nuevaFila, nuevaColumna)
+        }
+        runOnJS(actualizarSobreCelda)(nuevaFila, nuevaColumna)
+      })
+      .onEnd(() => {
+        runOnJS(limpiarSobreCelda)()
+        runOnJS(finalizarSeleccion)()
+      })
   }
 
-  const salir = () => {
-    // navigation.navigate('Inicio')
-  }
+  const tablaMemo = useMemo(() => {
+    return tabla.map((fila, filaI) => (
+      <View key={filaI} style={estilos.fila}>
+        {fila.map((celda, columnaI) => {
+          const isSeleccionada = seleccionadas.has(`${filaI}-${columnaI}`)
+          const isSobreCelda = sobreCelda.has(`${filaI}-${columnaI}`)
 
-  const empezartrivia = () => {
-    setPreguntaNumero(0)
-    siguiente()
-  }
-
-  const modalCorrecta = () => {
-    correctas == cantRespuestas ? siguiente() : setModalActivado(false)
-  }
-
-  if (isLoading) {
-    return <Loader loading={isLoading} />
-  }
-
-  return (
-    <View style={estilos.contenedorGeneral}>
-      <ReactNativeModal
-        backdropOpacity={0.5}
-        isVisible={modalActivado}
-        animationIn={'fadeIn'}
-        animationOut={'fadeOut'}
-        style={estilos.modalContenedor}
-      >
-        <View style={estilos.modalContenido}>
-          <Image source={logoTrivia} style={estilos.logoModal} resizeMode='cover'></Image>
-          <Text style={estilos.encabezado}>{textoCorrecta}</Text>
-          <TouchableOpacity style={estilos.botonModal} onPress={modalCorrecta}>
-            <Text style={estilos.botonModalTexto}>
-              {correctas === cantRespuestas && preguntaNumero != cantPreguntas - 1
-                ? 'Siguiente pregunta'
-                : preguntaNumero == cantPreguntas - 1
-                ? 'Finalizar'
-                : 'Aceptar'}
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </ReactNativeModal>
-
-      {preguntaNumero >= 0 && preguntaNumero < cantPreguntas ? (
-        <View style={estilos.contenedor}>
-          {/* <View style={estilos.cabecera}>
-            <TouchableOpacity onPress={salir}>
-              <View style={estilos.salirContenedor}>
-                <Text style={estilos.salirContenedorContenido}>X</Text>
-              </View>
-            </TouchableOpacity>
-          </View> */}
-
-          <Animated.View
-            style={[estilos.cuerpo, { transform: [{ translateX: animacionMov }], opacity: animacionOpacidad }]}
-          >
-            <View style={estilos.preguntaContenedor}>
-              <View style={estilos.progresoContenedor}>
-                <View style={estilos.progresoTextoContenedor}>
-                  <Text style={estilos.progresoTexto}>
-                    {preguntaNumero + 1} / {cantPreguntas}
-                  </Text>
-                </View>
-                <View style={estilos.barraProgresoContenedor}>
-                  <View style={estilos.barraProgresoFondo}>
-                    <View
-                      style={[estilos.barraProgreso, { width: `${((preguntaNumero + 1) / cantPreguntas) * 100}%` }]}
-                    ></View>
-                  </View>
-                </View>
-              </View>
-              <View style={estilos.preguntaContenedorTexto}>
-                <Text style={estilos.pCTT}>{preguntas[preguntaNumero].question_name}</Text>
-              </View>
-            </View>
-            {cantRespuestas > 1 ? <Text style={estilos.pCTTCh}>Hay más de una respuesta</Text> : null}
-            <View style={estilos.respuestasContenedor}>
-              <View style={estilos.respuestasLista}>
-                <FlatList
-                  contentContainerStyle={{ paddingBottom: 20 }}
-                  data={trivia.questions[preguntaNumero].answers}
-                  keyExtractor={item => item.id}
-                  renderItem={({ item, index }) => (
-                    <TouchableOpacity
-                      activeOpacity={0.8}
-                      disabled={desabilitado[index]}
-                      style={[
-                        estilos.respuesta,
-                        desabilitado[index] && { backgroundColor: pC.primario.claro + pC.transparencia[50] },
-                        seleccionado[index] && { backgroundColor: pC.primario.oscuro }
-                      ]}
-                      onPress={() => {
-                        clicRespuesta(index)
-                      }}
-                    >
-                      <Text style={estilos.respuestaTexto}>{item.answer_name}</Text>
-                    </TouchableOpacity>
-                  )}
-                ></FlatList>
-              </View>
-            </View>
-            <View style={estilos.pieContenedor}>
-              <TouchableOpacity
-                activeOpacity={0.8}
-                disabled={!botonValidar}
-                onPress={validarRespuesta}
+          return (
+            <GestureDetector key={columnaI} gesture={generarGestoPan(filaI, columnaI)}>
+              <View
                 style={[
-                  estilos.botonPie,
-                  botonValidar && { backgroundColor: pC.secundario.DEFAULT + pC.transparencia[70] }
+                  estilos.celda,
+                  isSeleccionada && estilos.celdaSeleccionada,
+                  isSobreCelda && estilos.celdaSobre
                 ]}
               >
-                <Text style={estilos.botonPieTexto}>Validar</Text>
+                <Text style={estilos.celdaTexto}>{celda}</Text>
+              </View>
+            </GestureDetector>
+          )
+        })}
+      </View>
+    ))
+  }, [tabla, seleccionadas, sobreCelda])
+  
+  return (
+    cargando ? (
+      <Loader loading={cargando} />
+    ): (restantes > 0 || timer == 0) ? (
+      <View style={estilos.contenedorGeneral}>
+        <ModalSalir
+          modalSalirVisible = {modalSalirVisible}
+          controllerNoSalir = {controllerNoSalir}
+          controllerSalir = {controllerSalir}>
+        </ModalSalir>
+
+        <ReactNativeModal
+        coverScreen = {false}
+          animationInTiming = {1000}
+          animationOutTiming = {500}
+          backdropOpacity= {0}
+          isVisible={modalActivado}
+          animationIn={'fadeInUp'}
+          animationOut={'fadeOutDown'}
+          style={estilos.modalContenedor}
+        >
+          <View style={estilos.modalContenido}>
+            <Text style={estilos.encabezado}>{"¡Has encontrado una palabra!"}</Text>
+          </View>
+        </ReactNativeModal>
+        
+        <View style={estilos.contenedor}>
+          <View style={estilos.cabecera}>
+              <TouchableOpacity onPress={() => setModalSalirVisible(true)}>
+                <View style={estilos.salirContenedor}>
+                  <Text style={estilos.salirContenedorContenido}>X</Text>
+                </View>
               </TouchableOpacity>
+            <View style = {estilos.cabeceraContenedorDerecha}>
+              <Text style={estilos.tiempoCabeceraStatus}>
+                { timer >= 3600 ? Math.floor(timer / 3600) + "h " + Math.floor((timer % 3600) / 60) + "m " + timer % 60 + "s ⏰" : timer < 60 ? timer + " segundos ⏰" : Math.floor(timer / 60) + "m " + timer % 60 + "s ⏰" }
+              </Text>
+              <Text style={estilos.textoCabeceraStatus}>
+                {
+                  restantes === 1 ? "Resta 1 palabra" : "Restan " + restantes + " palabras"
+                }
+              </Text>
             </View>
-          </Animated.View>
-        </View>
-      ) : preguntaNumero < 0 ? (
-        <View style={estilos.contenedorFull}>
-          <Image source={logoTrivia} style={estilos.logoTrivia} resizeMode='cover'></Image>
-          <Text style={estilos.tituloFullTexto}>{trivia.trivia_name}</Text>
-          <Text style={estilos.tituloObjetivoTexto}>{trivia.trivia_objective}</Text>
-          <TouchableOpacity style={estilos.botonEmpezarContainer} onPress={empezartrivia}>
-            <View style={estilos.botonEmpezar}>
-              <Text style={estilos.botonEmpezarTexto}>Empezar trivia</Text>
+          </View>
+
+          <View style={estilos.cuerpo}>
+            <View style={estilos.crucigramaContenedor}>
+              <View style={estilos.tabla} onLayout={(event) => {
+              const layout = event.nativeEvent.layout;
+              setContenedorPos({ x: layout.x, y: layout.y })
+            }}>
+                {tablaMemo}
+              </View>
             </View>
-          </TouchableOpacity>
-        </View>
-      ) : (
-        <View style={estilos.contenedorFull}>
-          <Image source={logoTrivia} style={estilos.logoTrivia} resizeMode='cover'></Image>
-          <Text style={estilos.tituloFullTexto}>¡Felicidades!</Text>
-          <Text style={estilos.tituloObjetivoTexto}>¡Has terminado la trivia!</Text>
-          <TouchableOpacity style={estilos.botonEmpezarContainer} onPress={salir}>
-            <View style={estilos.botonEmpezar}>
-              <Text style={estilos.botonEmpezarTexto}>Finalizar trivia</Text>
+
+            <View style={estilos.palabrasContenedor}>
+              <View style={estilos.palabrasFlat}>
+                <Text style={estilos.textoPalabrasFlat}>¡Busca estas palabras!</Text>
+                <FlatList
+                  contentContainerStyle={{
+                    flexGrow: 1,
+                    justifyContent: 'center',
+                    alignItems: 'flex-start',
+                  }}
+                  data = {elegidas}
+                  numColumns={2}
+                  keyExtractor={(item,i) => item.toString()}
+                  renderItem={({item,index})=>(
+                    <View 
+                      style={[
+                          estilos.palabras,
+                          restantesDeselec[index] && estilos.palabrasDeselec]}>
+                      <Text style={estilos.palabrasTexto}>{item}</Text>
+                    </View>
+                  )}>
+                </FlatList>
+              </View>
             </View>
-          </TouchableOpacity>
+          </View>
         </View>
-      )}
-    </View>
+      </View>
+    ) : (
+      <View style={estilos.contenedorFull}>
+        {mostrarConfetti && (
+          <View style={estilos.confetti}>
+            <ConfettiCannon
+              count={75}
+              origin={{ x: width/4, y: -25 }}
+              fallSpeed={3000}
+              autoStart={true}
+              explosionSpeed={350}
+              fadeOut={true}
+              autoStartDelay={0}>
+            </ConfettiCannon>
+            <ConfettiCannon
+              count={75}
+              origin={{ x: 2*width/3, y: -25 }}
+              fallSpeed={3000}
+              autoStart={true}
+              explosionSpeed={350}
+              fadeOut={true}
+              autoStartDelay={0}>
+            </ConfettiCannon>
+          </View>
+        )}
+        <Image source={logoColectivo} style={estilos.logoColectivo} resizeMode='cover'></Image>
+        <Text style={estilos.tituloFullTexto}>¡Felicidades! 🎉</Text>
+        <Text style={estilos.tituloObjetivoTexto}>¡Has terminado el crucigrama!</Text>
+        <Text style={estilos.tituloObjetivoTexto}>Palabras descubiertas: {elegidas.length}</Text>
+        <Text style={estilos.tituloObjetivoTexto}>Tu tiempo: {timer >= 3600 ? `${Math.floor(timer / 3600)}h ${Math.floor((timer % 3600) / 60)}m ${timer % 60}s` : timer <60 ? `${timer} segundos` : `${Math.floor(timer / 60)}m ${timer % 60}s` }</Text>
+        <Text style={estilos.tituloFullTexto}>
+          Tu promedio: ¡{Math.round((timer/elegidas.length) * Math.pow(10, 1)) / Math.pow(10, 1)} segundos por palabra!
+        </Text>
+        <TouchableOpacity style={estilos.botonEmpezarContainer} onPress={tareaTerminada}>
+          <View style={estilos.botonEmpezar}>
+            <Text style={estilos.botonEmpezarTexto}>Finalizar trivia</Text>
+          </View>
+        </TouchableOpacity>
+      </View>
+    )
   )
 }
 
 const estilos = StyleSheet.create({
+  confetti: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 9999,
+    elevation: 10,
+    pointerEvents: 'none'
+  },
   contenedorGeneral: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: pC.blanco
-  },
-
-  logoModal: {
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    position: 'absolute',
-    bottom: '90%',
-    alignSelf: 'center'
   },
 
   modalContenedor: {
@@ -320,51 +487,30 @@ const estilos = StyleSheet.create({
     backgroundColor: 'transparent'
   },
   modalContenido: {
-    backgroundColor: pC.primario.claro,
+    backgroundColor: pC.primario.claro + pC.transparencia[90],
     justifyContent: 'space-between',
     flexDirection: 'column',
     alignContent: 'center',
     alignSelf: 'center',
-    width: '90%',
+    marginTop: '20%',
+    padding: 20,
     borderRadius: 20,
-    marginTop: '30%',
-    padding: 10,
     borderColor: pC.secundario.DEFAULT + pC.transparencia[50],
     borderWidth: 2
   },
 
   encabezado: {
     color: pC.blanco,
-    margin: 15,
-    marginTop: 50,
     textAlign: 'center',
     fontSize: 15,
     fontWeight: '600'
   },
 
-  botonModal: {
-    alignSelf: 'center',
-    justifyContent: 'center',
-    alignContent: 'center',
-    backgroundColor: pC.secundario.claro,
-    width: '55%',
-    paddingVertical: 15,
-    margin: 5,
-    marginBottom: 15,
-    borderRadius: 10
-  },
-
-  botonModalTexto: {
-    color: pC.blanco,
-    textAlign: 'center',
-    fontWeight: 'bold'
-  },
-
   contenedorFull: {
     borderRadius: 20,
     paddingHorizontal: 20,
-    width: '100%',
-    // margin: '5%',
+    width: '90%',
+    margin: '5%',
     backgroundColor: pC.terciario.claro + pC.transparencia[50],
     flex: 1,
     justifyContent: 'center',
@@ -387,42 +533,6 @@ const estilos = StyleSheet.create({
     fontWeight: 'bold'
   },
 
-  logoTrivia: {
-    width: 200, // Quita las comillas
-    height: 200, // Quita las comillas
-    borderRadius: 50,
-    marginBottom: 40
-  },
-
-  tituloObjetivoTexto: {
-    textAlign: 'center',
-    color: pC.primario.DEFAULT,
-    fontSize: 15,
-    fontWeight: 'normal'
-  },
-
-  botonEmpezarContainer: {
-    marginTop: 30,
-    justifyContent: 'center',
-    alignItems: 'center'
-  },
-
-  botonEmpezar: {
-    width: 180,
-    padding: 20,
-    borderRadius: 50,
-    backgroundColor: pC.primario.DEFAULT,
-    justifyContent: 'center',
-    alignItems: 'center'
-  },
-
-  botonEmpezarTexto: {
-    textAlign: 'center',
-    fontSize: 15,
-    fontWeight: 'bold',
-    color: pC.blanco
-  },
-
   contenedor: {
     width: '90%',
     height: '95%',
@@ -431,8 +541,18 @@ const estilos = StyleSheet.create({
   },
 
   cabecera: {
-    alignItems: 'flex-start',
-    justifyContent: 'center'
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    flexDirection:'row'
+  },
+
+  textoCabeceraStatus: {
+    textAlign:"right",
+    fontSize:20
+  },
+  tiempoCabeceraStatus: {
+    textAlign:"right",
+    fontSize:15
   },
 
   salirContenedor: {
@@ -441,7 +561,8 @@ const estilos = StyleSheet.create({
     paddingHorizontal: '5%',
     paddingVertical: '2%',
     marginVertical: 10,
-    width: '20%',
+    width: 55,
+    height:55,
     borderRadius: 10,
     backgroundColor: pC.primario.DEFAULT + pC.transparencia[30]
   },
@@ -452,139 +573,155 @@ const estilos = StyleSheet.create({
     color: pC.primario.DEFAULT
   },
 
+  cabeceraContenedorDerecha:{},
+
   cuerpo: {
     flex: 1,
-    marginTop: 10,
-    justifyContent: 'flex-start'
+    marginTop: 20,
   },
 
-  preguntaContenedor: {
+  crucigramaContenedor: {
     alignItems: 'center',
     width: '100%',
-    height: '25%',
-    backgroundColor: pC.primario.DEFAULT + pC.transparencia[50],
-    borderRadius: 30,
-    padding: 20
   },
 
-  progresoContenedor: {
-    width: '100%',
-    height: '30%',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  tabla: {
+    flexDirection: 'column'
+  },
+  
+  fila: {
     flexDirection: 'row'
   },
-
-  progresoTextoContenedor: {
-    width: '25%',
-    height: '100%',
+  celda: {
+    width: tamCelda,
+    height: tamCelda,
+    borderWidth: bordeCelda,
+    borderRadius:5,
+    backgroundColor: pC.terciario.claro,
+    borderColor: pC.primario.oscuro,
+    justifyContent: 'center',
     alignItems: 'center',
-    justifyContent: 'center'
   },
-  progresoTexto: {
-    fontSize: 15,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    alignSelf: 'center',
-    color: pC.blanco
+  celdaTexto: {
+    fontSize: 18,
+    fontWeight:'bold',
+    color:pC.primario.DEFAULT
   },
-
-  barraProgresoContenedor: {
-    width: '75%',
-    height: '100%',
-    justifyContent: 'center',
-    padding: 10
+  celdaSobre: {
+    backgroundColor: pC.primario.claro,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.8,
+    shadowRadius: 3,
+    elevation: 5,
   },
-
-  barraProgresoFondo: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 20,
-    backgroundColor: pC.primario.oscuro
+  celdaSeleccionada: {
+    backgroundColor: pC.secundario.claro + pC.transparencia[10],
+    borderColor: pC.terciario.DEFAULT,
+    borderWidth: 2,
   },
-
-  barraProgreso: {
-    height: '100%',
-    borderRadius: 20,
-    backgroundColor: pC.terciario.claro + pC.transparencia[90]
-  },
-
-  preguntaContenedorTexto: {
-    justifyContent: 'center',
-    width: '100%',
-    height: '70%'
+  palabrasContenedor: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection:"row",
+    borderRadius: 30,
+    marginTop: 15,
+    backgroundColor: pC.terciario.claro + pC.transparencia[50],
   },
 
-  pCTT: {
-    fontSize: 20,
-    textAlign: 'center',
-    color: pC.blanco,
-    fontWeight: 'bold'
+  palabrasFlat:{
+    justifyContent:'center',
+    alignItems:'center',
   },
 
-  pCTTCh: {
-    fontSize: 13,
-    margin: 3,
-    textAlign: 'center',
-    color: pC.primario.claro,
-    fontWeight: '500'
+  textoPalabrasFlat: {
+    marginTop:6,
+    color:pC.primario.DEFAULT,
+    fontSize:18,
+    fontWeight:'bold'
   },
 
-  respuestasContenedor: {
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    // backgroundColor: 'black',
-    paddingTop: 20,
-    height: 'auto' // Cambia el tamaño basado en el contenido
-    // o utiliza un valor específico como:
-    // maxHeight: '70%',
-  },
-  respuestasLista: {
-    width: '100%',
-    justifyContent: 'center',
-    alignItems: 'center'
-  },
-
-  respuesta: {
-    margin: 5,
-    backgroundColor: pC.primario.DEFAULT + pC.transparencia[90],
+  palabras: {
+    margin:3,
+    borderColor: pC.primario.DEFAULT + pC.transparencia[90],
+    borderWidth:1,
     borderRadius: 10,
-    padding: 15,
-    width: '100%',
-    alignSelf: 'center',
+    padding: 7,
+    minWidth:120,
+    maxWidth:120,
     alignItems: 'center'
   },
-
-  respuestaTexto: {
+  palabrasDeselec: {
+    backgroundColor: pC.blanco,
+    borderColor: pC.terciario.DEFAULT,
+    borderWidth: 2,
+    padding: 6
+    
+  },
+  palabrasTexto: {
     fontSize: 15,
     fontWeight: '500',
-    color: pC.blanco,
+    color: pC.secundario.DEFAULT,
     textAlign: 'center'
   },
+
   pieContenedor: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    // padding: 10,
-    width: '100%',
-    height: '45%'
+    height:"10%",
+    alignItems:"center",
+    bottom:"-3%",
+    start:"25%",
+    justifyContent:"center",
+    position:"absolute",
   },
   botonPie: {
-    width: 180,
-    padding: 20,
-    borderRadius: 10,
-
-    // borderStartStartRadius: 30,
-    // borderEndStartRadius: 30,
-    backgroundColor: pC.secundario.DEFAULT + pC.transparencia[30],
-    justifyContent: 'center',
-    alignItems: 'center'
+    width:180,
+    padding:20,
+    borderTopLeftRadius: 30,
+    borderBottomLeftRadius: 0,
+    borderTopRightRadius: 30,
+    borderBottomRightRadius: 0,
+    backgroundColor:pC.secundario.DEFAULT+pC.transparencia[30],
+    justifyContent:"center",
+    alignItems:"center",
   },
   botonPieTexto: {
     textAlign: 'center',
     fontSize: 15,
     fontWeight: 'bold',
     color: pC.blanco
-  }
+  },
+  logoColectivo: {
+    width: 200,
+    height: 200,
+    borderRadius: 50,
+    marginBottom: 40
+  },
+  tituloObjetivoTexto: {
+    textAlign: 'center',
+    color: pC.primario.DEFAULT,
+    fontSize: 15,
+    fontWeight: 'normal'
+  },
+  botonEmpezarContainer: {
+    marginTop: 30,
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  botonEmpezar: {
+    width: 180,
+    padding: 20,
+    borderRadius: 50,
+    backgroundColor: pC.primario.DEFAULT,
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  botonEmpezarTexto: {
+    textAlign: 'center',
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: pC.blanco
+  },
 })
 
-export default Trivia
+export default Crucigrama

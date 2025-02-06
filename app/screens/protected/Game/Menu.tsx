@@ -32,22 +32,22 @@ const HomeScreen = () => {
 
   const juegos: Juego[] = [
     {
-      id: '1',
+      id: '2',
       name: 'Trivia',
       modulo: '1',
       view: 'Trivia',
       descripcion: 'Un juego de trivia educativo',
       imagen: require('./src/icons/trivia.jpg'),
-      idTrivia: '1'
+      idTrivia: '2'
     },
     {
-      id: '2',
+      id: '1',
       name: 'Crucigrama',
       modulo: '1',
       view: 'Crucigrama',
       descripcion: 'Un juego de crucigrama educativo',
       imagen: require('./src/icons/crucigrama.jpg'),
-      idTrivia: '2'
+      idTrivia: '1'
     }
   ]
 
@@ -142,7 +142,9 @@ const estilos = StyleSheet.create({
   contenedorMenu: {
     flex: 1,
     marginHorizontal: 20,
-    width: '100%'
+    backgroundColor: pC.negro,
+    alignItems:'flex-start',
+    width: '80%'
   },
   contenedorPie: {
     height: '12%',
