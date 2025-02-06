@@ -32,11 +32,20 @@ const Parejas = () => {
   const animacionOpacidad = useRef(new Animated.Value(0)).current
 
   const logoColectivo = require ('./src/logoColectivo.png')
+  const atras = require ('./src/icons/parejas/atras.png')
   const [modalSalirVisible, setModalSalirVisible] = useState(false)
 
   const [tarjetas, setTarjetas] = useState<Carta[]>([])
   const [giros, setGiros] = useState<number[]>([])
-  const angulo = 5
+  const [anguloMin, anguloMax] = [-5,5]
+  const [girosAnimados, setGirosAnimados] = useState<{ [key: number]: Animated.Value }>({})
+  const [mostrandoCara, setMostrandoCara] = useState<boolean[]>([]) 
+  const [contadorCartas, setContadorCartas] = useState<number>(0) 
+  const [primeraCarta, setPrimeraCarta] = useState<number>(-1) 
+  const [primeraCartaI, setPrimeraCartaI] = useState<number>(-1) 
+  const [encontrada, setEncontrada] = useState<boolean[]>([]) 
+  
+
 
   const iniciarConfetti = () => {
     setMostrarConfetti(true)
@@ -57,10 +66,20 @@ const Parejas = () => {
   const okay = () => {setModalActivado(false)}
   const error = () => {setStatus (-1)}
   const aInicio = () => {setStatus (0)}
-  const play = () => {setStatus (1)}
   const continuar = () => {setStatus (2)}
   const finalizar = () => {setStatus (9)}
   const cargando = () => {setStatus (-2)}
+
+  const play = () => {
+    Animated.parallel([
+      Animated.timing(animacionMov, { toValue: 0, duration: 400, useNativeDriver: true }),
+      Animated.timing(animacionOpacidad, { toValue: 1, duration: 400, useNativeDriver: true })
+    ]).start(() => {
+      setStatus(1)
+      inicializar()
+    })
+  }
+  
 
   type Carta = {
     idPareja: number
@@ -92,32 +111,32 @@ const Parejas = () => {
     {
       idPareja: 9,
       emocion:"Tristeza",
-      imagen: require('./src/icons/parejas/Felicidad.jpg'),
+      imagen: require('./src/icons/parejas/Tristeza.jpg'),
     },
     {
       idPareja: 11,
       emocion:"Asco",
-      imagen: require('./src/icons/parejas/Felicidad.jpg'),
+      imagen: require('./src/icons/parejas/Asco.jpg'),
     },
     {
       idPareja: 13,
       emocion:"Preocupación",
-      imagen: require('./src/icons/parejas/Felicidad.jpg'),
+      imagen: require('./src/icons/parejas/Preocupacion.jpg'),
     },
     {
       idPareja: 15,
       emocion:"Tranquilidad",
-      imagen: require('./src/icons/parejas/Felicidad.jpg'),
+      imagen: require('./src/icons/parejas/Tranquilidad.jpg'),
     },
     {
       idPareja: 17,
       emocion:"Admiración",
-      imagen: require('./src/icons/parejas/Felicidad.jpg'),
+      imagen: require('./src/icons/parejas/Admiracion.jpg'),
     },
     {
       idPareja: 19,
       emocion:"Vergüenza",
-      imagen: require('./src/icons/parejas/Felicidad.jpg'),
+      imagen: require('./src/icons/parejas/Verguenza.jpg'),
     }
   ]
 
@@ -143,6 +162,12 @@ const Parejas = () => {
   )
 
   useEffect(() => {
+    let nuevosGiros: { [key: number]: Animated.Value } = {};
+    tarjetas.forEach((_, index) => {nuevosGiros[index] = new Animated.Value(0)})
+    setGirosAnimados(nuevosGiros)
+  }, [tarjetas])
+
+  useEffect(() => {
     animacionMov.setValue(0)
     animacionOpacidad.setValue(0)
     switch(status){
@@ -158,13 +183,11 @@ const Parejas = () => {
       case 1:{
         animacionMov.setValue(0)
         animacionOpacidad.setValue(0)
-
+        
         Animated.parallel([
           Animated.timing(animacionMov, {toValue: 0, duration: 400, useNativeDriver: true}),
           Animated.timing(animacionOpacidad, {toValue: 1, duration: 400, useNativeDriver: true})
-        ]).start(() => {})
-
-        inicializar()
+        ]).start(() => {inicializar()})
       }
       case 9:{
         animacionMov.setValue(0)
@@ -185,19 +208,89 @@ const Parejas = () => {
   }
 
   const inicializar = () => {
-    let giromatico: React.SetStateAction<number[]> = ([])
     let seleccionadas = [...cartas].sort(() => Math.random() - 0.5).slice(0, 6)
     let duplicado = seleccionadas.map((tarjeta) => ({...tarjeta,idPareja: tarjeta.idPareja + 1}))
     let barajadas = [...seleccionadas, ...duplicado].sort(() => Math.random() - 0.5)
     setTarjetas(barajadas)
 
-    tarjetas.forEach((tarjeta)=>{
-      giromatico.push(Math.random()*angulo)
-    })
+    setMostrandoCara(Array(barajadas.length).fill(true))
+    setEncontrada(Array(barajadas.length).fill(false))
+    setGiros(barajadas.map(() => Math.random() * (anguloMax - anguloMin) + anguloMin))
 
-    setGiros(giromatico)
-    console.log(giros)
+    let girosIniciales: { [key: number]: Animated.Value } = {}
+    tarjetas.forEach((tarjeta, index) => {girosIniciales[index] = new Animated.Value(0)})
+    setGirosAnimados(girosIniciales)
   }
+
+  const girarTarjeta = (index: number) => {
+    if (!girosAnimados[index]) return
+  
+    Animated.timing(girosAnimados[index], {
+      toValue: mostrandoCara[index] ? 1 : 0,
+      duration: 500,
+      useNativeDriver: true
+    }).start(()=>{
+      const nuevaCara = [...mostrandoCara]
+      nuevaCara[index] = !nuevaCara[index]
+      setMostrandoCara(nuevaCara)
+    })
+  }
+
+  const girarTarjetas = (index1: number, index2: number) => {
+    if (!girosAnimados[index1] || !girosAnimados[index2]) return
+  
+    const nuevasCaras = [...mostrandoCara]
+    nuevasCaras[index1] = !nuevasCaras[index1]
+    nuevasCaras[index2] = !nuevasCaras[index2]
+    setMostrandoCara(nuevasCaras) 
+  
+    Animated.parallel([
+      Animated.timing(girosAnimados[index1], {
+        toValue: nuevasCaras[index1] ? 1 : 0,
+        duration: 500,
+        useNativeDriver: true
+      }),
+      Animated.timing(girosAnimados[index2], {
+        toValue: nuevasCaras[index2] ? 1 : 0,
+        duration: 500,
+        useNativeDriver: true
+      })
+    ]).start()
+  }
+  
+
+  const comprobarClic = (indice: number) => {
+    if (indice === primeraCartaI || encontrada[indice] || !mostrandoCara[indice]) return
+  
+    let id = tarjetas[indice].idPareja
+  
+    if (contadorCartas === 0) {
+      girarTarjeta(indice) // Gira la primera carta
+      setPrimeraCarta(id)
+      setPrimeraCartaI(indice)
+      setContadorCartas(1)
+    } else if (contadorCartas === 1) {
+      setContadorCartas(2) // Bloquea más clics mientras evalúa
+      girarTarjetas(primeraCartaI, indice) // Gira ambas a la vez
+  
+      setTimeout(() => {
+        if (primeraCarta === id) {
+          let encontradaTemp = [...encontrada]
+          encontradaTemp[primeraCartaI] = true
+          encontradaTemp[indice] = true
+          setEncontrada(encontradaTemp)
+          playSound("punto")
+          iniciarParticulas()
+        } else {
+          setTimeout(() => {
+            girarTarjetas(primeraCartaI, indice) // Volver a girarlas si no coinciden
+          }, 800)
+        }
+        setContadorCartas(0)
+      }, 700)
+    }
+  }
+  
 
   return (
     status ==-2 ? (
@@ -273,14 +366,59 @@ const Parejas = () => {
 
           <View style={estilos.cuerpo}>
             <View style={estilos.cartaContenedor}>
+              {tarjetas.map((tarjeta, index) => {
+                const interpolacionRotacion = girosAnimados[index]?.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: ['0deg', '180deg']
+                }) || '0deg'
 
-              {tarjetas.map(tarjeta => (
-                <Animated.View key={tarjeta.idPareja} style={estilos.carta}>
-                  <Image source={tarjeta.imagen} style={estilos.cartaImagen} resizeMode='cover'></Image>
-                  <Text style={estilos.cartaTexto}>{tarjeta.emocion}</Text>                
-                </Animated.View>
-              ))}
+                const interpolacionZoom = girosAnimados[index]?.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [1, 1.1]
+                }) || 1
 
+                const opacityFront = girosAnimados[index]?.interpolate({
+                  inputRange: [0, 0.5],
+                  outputRange: [1, 0],
+                  extrapolate: 'clamp'
+                }) || 1
+
+                const opacityBack = girosAnimados[index]?.interpolate({
+                  inputRange: [0.5, 1],
+                  outputRange: [0, 1],
+                  extrapolate: 'clamp'
+                }) || 0
+
+                return (
+                  <TouchableOpacity disabled={encontrada[index]} key={index} onPress={() => comprobarClic(index)}
+                    style={{ transform: [{ rotate: `${giros[index]}deg` }] }}>
+                    <Animated.View style={[estilos.carta,{transform: [{ rotateY: interpolacionRotacion }, { scale: interpolacionZoom }]}]}>
+                      <Animated.View style={{ 
+                          opacity: opacityFront, 
+                          position: "absolute", 
+                          backfaceVisibility: 'hidden', 
+                          width: '100%', 
+                          height: '100%',
+                          zIndex: mostrandoCara[index] ? 2 : 0
+                      }}>
+                        <Image source={atras} style={estilos.cartaImagenAtras} resizeMode='cover' />
+                      </Animated.View>
+                      <Animated.View style={{ 
+                          opacity: opacityBack, 
+                          position: "absolute", 
+                          backfaceVisibility: 'visible', 
+                          width: '100%', 
+                          height: '100%',
+                          zIndex: mostrandoCara[index] ? 0 : 2,
+                          transform: [{ rotateY: '180deg' }] 
+                      }}>
+                        <Image source={tarjeta.imagen} style={estilos.cartaImagen} resizeMode='cover' />
+                        <Text style={estilos.cartaTexto}>{tarjeta.emocion}</Text>
+                      </Animated.View>
+                    </Animated.View>
+                  </TouchableOpacity>
+                )
+              })}
             </View>
           </View>
 
@@ -411,7 +549,6 @@ const estilos = StyleSheet.create({
     marginTop: 10,
   },
   cartaContenedor: {
-    backgroundColor: "red",
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
@@ -422,16 +559,23 @@ const estilos = StyleSheet.create({
 
   carta: {
     backgroundColor: pC.terciario.claro,
-    width: 100,
-    height: 135,
-    margin: 7,
+    width: 110,
+    height: 145,
+    margin: 2,
     borderRadius: 10,
-    borderColor:pC.blanco,
+    borderColor:pC.terciario.oscuro,
     borderWidth: 5
   },
 
+  cartaImagenAtras: {
+    marginTop: 25,
+    width: 85,
+    height: 85,
+    alignSelf: 'center',
+  },
+
   cartaImagen: {
-    marginTop: 5,
+    marginTop: 7,
     width: 85,
     height: 85,
     borderRadius: 50,
@@ -532,7 +676,7 @@ const estilos = StyleSheet.create({
     margin: 5,
     marginBottom: 15,
     borderRadius: 10,
-    borderColor: "white",
+    borderColor: pC.blanco,
     borderWidth: 2
   },
 
