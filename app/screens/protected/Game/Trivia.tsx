@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { View, Text, Button, StyleSheet, Animated, ActivityIndicator, FlatList, TouchableOpacity, Image, BackHandler, Dimensions } from "react-native"
+import { View, Text, StyleSheet, Animated, ActivityIndicator, FlatList, TouchableOpacity, Image, BackHandler, Dimensions } from "react-native"
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native'
 import ReactNativeModal from "react-native-modal"
 import { useToast } from 'react-native-toast-notifications'
@@ -9,6 +9,7 @@ import { ModalSalir } from "./src/components/modalSalir"
 import pC from './src/theme/colores'
 import ConfettiCannon from 'react-native-confetti-cannon'
 import Orientation from 'react-native-orientation-locker'
+import {playSound, stopSound} from "./src/components/Audio"
 
 const { width, height } = Dimensions.get('window')
 
@@ -33,6 +34,7 @@ const Trivia = () => {
 
   const animacionMov = useState(new Animated.Value(-400))[0]
   const animacionOpacidad = useState(new Animated.Value(0))[0]  
+  const animacionOpacidadFin = useState (new Animated.Value(0))[0]
   const { idTrivia }: any = route.params || {}
   const logoColectivo = require ('./src/logoColectivo.png')
 
@@ -49,7 +51,6 @@ const Trivia = () => {
       setModalSalirVisible(false)
       navigation.goBack()
     }
-
     const iniciarConfetti = () => {
       setMostrarConfetti(true)
       //setTimeout(() => setMostrarConfetti(false), 10000)
@@ -117,7 +118,7 @@ useEffect(() => {
   const siguiente = () => {
     setModalActivado(false)
     setMostrarConfetti(false)
-    if (preguntaNumero < cantPreguntas - 1) {
+    if (preguntaNumero < cantPreguntas-1) {
       Animated.parallel([
         Animated.timing(animacionMov, { toValue: -500, duration: 400, useNativeDriver: true }),
         Animated.timing(animacionOpacidad, { toValue: 0, duration: 400, useNativeDriver: true })
@@ -125,7 +126,6 @@ useEffect(() => {
         setDesabilitado([])
         setSeleccionado([])
         setCorrectas(0)
-        setPreguntaNumero(preguntaNumero + 1)
         getCantRespuestas()
         animacionMov.setValue(500)
         animacionOpacidad.setValue(0)
@@ -134,10 +134,20 @@ useEffect(() => {
           Animated.timing(animacionOpacidad, { toValue: 1, duration: 400, useNativeDriver: true })
         ]).start()
       })
-    } else if (preguntaNumero == cantPreguntas - 1) {
-      iniciarConfetti()
-    } else {
       setPreguntaNumero(preguntaNumero + 1)
+    } else {
+      setPreguntaNumero(cantPreguntas)
+      Animated.parallel([
+        Animated.timing(animacionMov, { toValue: -500, duration: 400, useNativeDriver: true }),
+        Animated.timing(animacionOpacidad, { toValue: 0, duration: 400, useNativeDriver: true })
+      ]).start(() => {
+        playSound("victoria")
+        animacionMov.setValue(500)
+        animacionOpacidad.setValue(0)
+        Animated.parallel([
+          Animated.timing(animacionMov, { toValue: 0, duration: 400, useNativeDriver: true }),
+          Animated.timing(animacionOpacidadFin, { toValue: 1, duration: 400, useNativeDriver: true })
+        ]).start(()=>{iniciarConfetti()})})
     }
   }
 
@@ -198,6 +208,7 @@ useEffect(() => {
     if (correcta) {
       setCorrectas(correctas + 1)
       setModalActivado(true)
+      playSound("punto")
       iniciarConfetti()
     }
   }
@@ -347,7 +358,7 @@ useEffect(() => {
           </TouchableOpacity>
         </View>
       ) : (
-        <View style={estilos.contenedorFull}>
+        <Animated.View style={[estilos.contenedorFull, { opacity: animacionOpacidadFin }]}>
           <Image source={logoColectivo} style={estilos.logoColectivo} resizeMode='cover'></Image>
           <Text style={estilos.tituloFullTexto}>¡Felicidades! 🎉</Text>
           <Text style={estilos.tituloObjetivoTexto}>¡Has terminado la trivia!</Text>
@@ -356,7 +367,7 @@ useEffect(() => {
               <Text style={estilos.botonEmpezarTexto}>Finalizar trivia</Text>
             </View>
           </TouchableOpacity>
-        </View>
+        </Animated.View>
       )}
     </View>
   )
@@ -381,8 +392,8 @@ const estilos = StyleSheet.create({
   },
 
   logoModal: {
-    width: 200,
-    height: 200,
+    width: 160,
+    height: 160,
     borderRadius: 100,
     position: 'absolute',
     bottom: '90%',
@@ -428,7 +439,9 @@ const estilos = StyleSheet.create({
     paddingVertical: 15,
     margin: 5,
     marginBottom: 15,
-    borderRadius: 10
+    borderRadius: 10,
+    borderColor: "white",
+    borderWidth: 2
   },
 
   botonModalTexto: {
@@ -446,14 +459,6 @@ const estilos = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center'
-  },
-
-  cargandoContenedorTexto: {
-    textAlign: 'center',
-    margin: '5%',
-    color: pC.negro,
-    fontSize: 25,
-    fontWeight: 'bold'
   },
 
   tituloFullTexto: {

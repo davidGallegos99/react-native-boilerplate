@@ -1,10 +1,13 @@
 import React from 'react'
-import { ScrollView, StyleSheet, Text, View } from 'react-native'
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 
 import Logo from '../../../logo.svg'
 import { RouteProp } from '@react-navigation/native'
 
 import { RootStackParamList } from '@screens/SignUpOptsScreen'
+
+import { useNavigation } from '@react-navigation/native'
+import { StackNavigationProp } from '@react-navigation/stack'
 
 type TriviaDetailsRouteProp = RouteProp<RootStackParamList, 'TriviaDetails'>
 
@@ -14,6 +17,7 @@ type TriviaDetailsProps = {
 
 const TriviaDetailsScreen: React.FC<TriviaDetailsProps> = ({ route }) => {
   const { moduleName, trivias } = route.params
+  const navigation = useNavigation<StackNavigationProp<RootStackParamList>>()
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -23,9 +27,13 @@ const TriviaDetailsScreen: React.FC<TriviaDetailsProps> = ({ route }) => {
       <Text style={styles.moduleTitle}>{moduleName.toUpperCase()}</Text>
       <View style={styles.triviasContainer}>
         {trivias.map(trivia => (
-          <View key={trivia.id} style={styles.triviaCard}>
+          <TouchableOpacity
+            key={trivia.id}
+            style={styles.triviaCard}
+            activeOpacity={0.7}
+            onPress={() => navigation.navigate('Game', { screen: "Trivia", params: { idTrivia: trivia.id } })}>
             <Text style={styles.triviaName}>{trivia.trivia_name.toUpperCase()}</Text>
-          </View>
+          </TouchableOpacity>
         ))}
       </View>
     </ScrollView>
@@ -51,7 +59,8 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     backgroundColor: '#EDE7FE',
     paddingVertical: 10,
-    borderRadius: 10
+    borderRadius: 10,
+    padding: 10
   },
   triviasContainer: {
     flexDirection: 'row',
@@ -73,6 +82,7 @@ const styles = StyleSheet.create({
     elevation: 5
   },
   triviaName: {
+    margin:3,
     fontSize: 14,
     fontWeight: 'bold',
     color: '#4A148C',

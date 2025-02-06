@@ -121,6 +121,7 @@ const styles = StyleSheet.create({
     elevation: 5
   },
   cardText: {
+    margin: 10,
     fontSize: 18,
     fontWeight: 'bold',
     color: '#4A148C',

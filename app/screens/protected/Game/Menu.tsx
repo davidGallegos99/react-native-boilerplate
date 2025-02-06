@@ -13,8 +13,6 @@ type RootStackParamList = {
   [key: string]: { [key: string]: any }
 }
 
-type HomeScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Main'>
-
 type Juego = {
   id: string
   name: string
@@ -22,7 +20,6 @@ type Juego = {
   view: string
   descripcion: string
   imagen: ImageSourcePropType
-  idTrivia: string
 }
 
 const HomeScreen = () => {
@@ -32,36 +29,23 @@ const HomeScreen = () => {
 
   const juegos: Juego[] = [
     {
-      id: '2',
-      name: 'Trivia',
-      modulo: '1',
-      view: 'Trivia',
-      descripcion: 'Un juego de trivia educativo',
-      imagen: require('./src/icons/trivia.jpg'),
-      idTrivia: '2'
-    },
-    {
       id: '1',
-      name: 'Crucigrama',
+      name: 'Equipaje de género',
       modulo: '1',
       view: 'Crucigrama',
       descripcion: 'Un juego de crucigrama educativo',
       imagen: require('./src/icons/crucigrama.jpg'),
-      idTrivia: '1'
+    },
+    {
+      id: '2',
+      name: 'EmotiMatch',
+      modulo: '1',
+      view: 'Parejas',  
+      descripcion: 'un juego divertido de parejas',
+      imagen: require('./src/icons/parejas.jpg'),
     }
   ]
-
-  /*
-  const obtenerDatos = async () => {
-    const direccion = 'https://raw.githubusercontent.com/eclipstar/apirest/refs/heads/main/dataTodosJuegos.json'
-    const data: Juego[] = await (await fetch(direccion)).json()
-    setJuegos(data)
-  }
-
-  useEffect(() => {
-    obtenerDatos()
-  }, [])
-*/
+  
   return (
     <View style={estilos.contenedorGeneral}>
       {juegos.length != 0 ? (
@@ -90,7 +74,7 @@ const HomeScreen = () => {
                     key={item.id}
                     style={estilos.tarjeta}
                     onPress={() =>
-                      navigation.navigate('Game', { screen: item.view, params: { idTrivia: item.idTrivia } })
+                      navigation.navigate('Game', { screen: item.view })
                     }
                   >
                     <Image source={item.imagen} resizeMode='cover' style={estilos.tarjetaImagen} />
@@ -142,8 +126,6 @@ const estilos = StyleSheet.create({
   contenedorMenu: {
     flex: 1,
     marginHorizontal: 20,
-    backgroundColor: pC.negro,
-    alignItems:'flex-start',
     width: '80%'
   },
   contenedorPie: {
@@ -163,7 +145,8 @@ const estilos = StyleSheet.create({
   },
   tarjeta: {
     alignItems: 'center',
-    margin: 12
+    margin: 12,
+    width: 110
   },
   tarjetaImagen: {
     width: 110,
@@ -180,7 +163,9 @@ const estilos = StyleSheet.create({
   scrollVista: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-evenly',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    width:"100%",
     paddingVertical: 20
   }
 })

@@ -18,7 +18,7 @@ export type RootStackParamList = {
   Main: undefined
   SignUpOpts: undefined
 
-  Game: undefined
+  Game: { screen: string; params?: { idTrivia?: number } }
   MainGame: undefined
   Description1: undefined
   Description2: undefined

@@ -37,11 +37,11 @@ const ModalSalir: React.FC<ModalSalirProps> = ({ modalSalirVisible, controllerSa
 
 const estiloModalSalir = StyleSheet.create({   
     logoModal: {
-        width: 200,
-        height: 200,
+        width: 160,
+        height: 160,
         borderRadius: 100,
         position: 'absolute',
-        bottom: '105%',
+        bottom: '110%',
         alignSelf: 'center'
       },
       modalContenedor: {
@@ -82,13 +82,16 @@ const estiloModalSalir = StyleSheet.create({
       contenedorBotones:{
         justifyContent:"space-evenly",
         alignItems:"center",
-        flexDirection:"row"
+        flexDirection:"row",
+        paddingTop: 10
       },
       botonModal: {
         alignSelf: 'center',
         justifyContent: 'center',
         alignContent: 'center',
         backgroundColor: pC.secundario.claro,
+        borderColor: pC.blanco,
+        borderWidth:1,
         width: '40%',
         paddingVertical: 15,
         margin: 5,

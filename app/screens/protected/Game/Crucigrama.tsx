@@ -1,40 +1,45 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { View, Text, Button, StyleSheet, Animated, ActivityIndicator, FlatList, TouchableOpacity, Image, BackHandler, Dimensions } from "react-native"
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native'
 import ReactNativeModal from "react-native-modal"
 import Loader from '@ui/components/Loader'
-import { useToast } from 'react-native-toast-notifications'
 import { GestureDetector, Gesture } from "react-native-gesture-handler"
 import { runOnJS, useSharedValue } from 'react-native-reanimated'
 import { ModalSalir } from "./src/components/modalSalir"
 import pC from './src/theme/colores'
 import Orientation from 'react-native-orientation-locker'
 import ConfettiCannon from 'react-native-confetti-cannon'
+import Particles from './src/components/Particulas'
+import {playSound, stopSound} from "./src/components/Audio"
 
 const tamCelda = 34
 const bordeCelda = 1
 const { width, height } = Dimensions.get('window')
-const margenError = 5
 
 const Crucigrama = () => {
   const [mostrarConfetti, setMostrarConfetti] = useState(false)
-  const route = useRoute()
   const navigation = useNavigation()
-  const { idJuego }: any = route.params || {}
   const logoColectivo = require ('./src/logoColectivo.png')
   const [modalSalirVisible, setModalSalirVisible] = useState<boolean>(false)
-  const [cargando, setCargando] = useState<boolean>(true)
+  const [status, setStatus] = useState(-2)
   const [modalActivado, setModalActivado] = useState<boolean>(false)
 
   const tam = 10
-  const [timer,setTimer] = useState<number>(0)
-  const [enMarcha, setEnMarcha] = useState<boolean>(true)
+  const timerRef = useRef(0)
+  const [displayTimer, setDisplayTimer] = useState(0)
+  const [enMarcha, setEnMarcha] = useState<boolean>(false)
 
   const [tabla, setTabla] = useState<string[][]>(Array.from({ length: tam }, () => Array(tam).fill("x")))
   const [contenedorPos, setContenedorPos] = useState({ x: 0, y: 0 })
 
   const [seleccionadas, setSeleccionadas] = useState(new Set())
   const seleccionadasRef = useRef<Set<string>>(new Set())
+
+  const animacionMov = useRef(new Animated.Value(-400)).current
+  const animacionOpacidad = useRef(new Animated.Value(0)).current
+  const [mostrarParticulas, setMostrarParticulas] = useState(false)
+  const [coordenadasParticulas, setCoordenadasParticulas] = useState<{ x: number; y: number }>({ x: width/2, y: height/2 })
+  const tiempoParticulas = 1200
 
   const [sobreCelda, setSobreCelda] = useState(new Set())
   const sobreCeldaRef = useRef<Set<string>>(new Set())
@@ -46,6 +51,16 @@ const Crucigrama = () => {
   const [elegidasRef, setElegidasRef] = useState<Set<string>>(new Set())
   const [restantes, setRestantes] = useState<number>(0)
   const [restantesDeselec, setRestantesDeselec] = useState<boolean[]>([])  
+
+  const cargando = () => {setStatus (-2)}
+  const aInicio = () => {setStatus (0)}
+  const play = () => {setStatus (1)}
+  const finalizar = () => {setStatus (9)}
+
+  const iniciarParticulas = () => {
+    setMostrarParticulas(true)
+    setTimeout(() => setMostrarParticulas(false), tiempoParticulas+(tiempoParticulas*0.4))
+  }
 
   const controllerSalir = () => {
     setModalSalirVisible(false)
@@ -70,7 +85,7 @@ const Crucigrama = () => {
         sobreCeldaTimer.current = setTimeout(() => {
           setSobreCelda(new Set(sobreCeldaRef.current))
           sobreCeldaTimer.current = null
-        }, 50)
+        }, 25) 
       }
     }
   }
@@ -80,7 +95,7 @@ const Crucigrama = () => {
     setSobreCelda(new Set())
   }
 
-  const finalizarSeleccion = () => {  
+  const finalizarSeleccion = useCallback(() => {  
     const celdasSeleccionadas = Array.from(seleccionadasRef.current)
     if (celdasSeleccionadas.length < 2) {
       seleccionadasRef.current.clear()
@@ -106,7 +121,8 @@ const Crucigrama = () => {
           setModalActivado(true)
           setTimeout(() => setModalActivado(false), 1500)
         }
-  
+        iniciarParticulas()
+        playSound("punto")
         setRestantes(prev => prev - 1)
         setSeleccionadas(prev => new Set([...prev, ...celdasSeleccionadas]))
         setElegidasRef(prev => {
@@ -123,7 +139,45 @@ const Crucigrama = () => {
       }
     }
     seleccionadasRef.current.clear()
-  }  
+    if (restantes == 1) {
+      finalizar()
+      playSound("victoria")
+    }
+  }, [tabla, elegidasRef, restantes, modalActivado])
+
+  useEffect(() => {
+      animacionMov.setValue(0)
+      animacionOpacidad.setValue(0)
+      switch(status){
+        case 0:{
+          animacionMov.setValue(0)
+          animacionOpacidad.setValue(0)
+  
+          Animated.parallel([
+            Animated.timing(animacionMov, {toValue: 0, duration: 400, useNativeDriver: true}),
+            Animated.timing(animacionOpacidad, {toValue: 1, duration: 400, useNativeDriver: true})
+          ]).start(() => {})
+        }
+        case 1:{
+          animacionMov.setValue(0)
+          animacionOpacidad.setValue(0)
+  
+          Animated.parallel([
+            Animated.timing(animacionMov, {toValue: 0, duration: 400, useNativeDriver: true}),
+            Animated.timing(animacionOpacidad, {toValue: 1, duration: 400, useNativeDriver: true})
+          ]).start(() => {})
+        }
+        case 9:{
+          animacionMov.setValue(0)
+          animacionOpacidad.setValue(0)
+  
+          Animated.parallel([
+            Animated.timing(animacionMov, {toValue: 0, duration: 400, useNativeDriver: true}),
+            Animated.timing(animacionOpacidad, {toValue: 1, duration: 400, useNativeDriver: true})
+          ]).start(() => {})
+        }
+      }
+    }, [status])
 
   useEffect(() => {
     Orientation.lockToPortrait()
@@ -145,22 +199,23 @@ const Crucigrama = () => {
     let intervalo: NodeJS.Timeout
     if (enMarcha) {
       intervalo = setInterval(() => {
-        setTimer(timer => timer + 1)
+        timerRef.current += 1
+        setDisplayTimer(timerRef.current)
       }, 1000)
     }
 
-    if (restantes === 0) {
+    return () => {clearInterval(intervalo)}
+  }, [enMarcha])
+
+  useEffect(() => {
+    if (restantes === 0 || status == 9) {
       setEnMarcha(false)
       setMostrarConfetti(true)
     } else {
-      setEnMarcha(true)
+      if (status == 1){setEnMarcha(true)}
       setMostrarConfetti(false)
     }
-
-    return () => {
-      clearInterval(intervalo)
-    }
-  }, [restantes, enMarcha])
+  }, [restantes, status])
 
   useFocusEffect(
     React.useCallback(() => {
@@ -195,7 +250,6 @@ const Crucigrama = () => {
         palabras[0] = palabras[0].toUpperCase()
 
         const direccion = Math.random() < 0.5
-        let colocada = false
 
         for (let intento = 0; intento < 100; intento++) {
           const filaInicio = Math.floor(Math.random() * (filas - (direccion ? 0 : largoPalabra)))
@@ -229,7 +283,6 @@ const Crucigrama = () => {
               const columna = columnaInicio + (direccion ? i : 0)
               nuevaTabla[fila][columna] = palabras[0][i]
             }
-            colocada = true
             palabrasEle.push(palabras[0])
             numeroPal--
             break
@@ -258,29 +311,28 @@ const Crucigrama = () => {
   useEffect(() => {
     setRestantes(elegidas.length)
     setRestantesDeselec(Array(restantes).fill(false))
-    setCargando (false)
     setSeleccionadas(new Set())
     setSobreCelda(new Set())
+    aInicio()
   }, [elegidas])
 
-  const sharedValues = useMemo(() => {
-    return Array.from({ length: tam }, () =>
-      Array.from({ length: tam }, () => ({
-        fila: { value: 0 },
-        columna: { value: 0 },
-      }))
-    )
-  }, [])
-
-  const generarGestoPan = (filaI: number, columnaI: number) => {
+  const generarGestoPan = useCallback((filaI: number, columnaI: number) => {
     let ultimaFila = filaI
     let ultimaColumna = columnaI
   
     return Gesture.Pan()
+      .onTouchesDown(() => {
+        runOnJS(actualizarSobreCelda)(filaI, columnaI)
+      })
+      .onTouchesUp(() => {
+        runOnJS(limpiarSobreCelda)()
+      })
+      .onTouchesCancelled(() => {
+        runOnJS(limpiarSobreCelda)()
+      })
       .onStart(() => {
         ultimaFila = filaI
         ultimaColumna = columnaI
-        runOnJS(limpiarSobreCelda)()
         runOnJS(actualizarSeleccionTemporal)(filaI, columnaI)
       })
       .onUpdate((e) => {
@@ -288,19 +340,10 @@ const Crucigrama = () => {
         const offsetX = e.translationX / tamCelda
         const offsetY = e.translationY / tamCelda
   
-        const nuevaFila = Math.min(
-          Math.max(Math.round(ultimaFila + offsetY), 0),
-          tam - 1
-        )
-        const nuevaColumna = Math.min(
-          Math.max(Math.round(ultimaColumna + offsetX), 0),
-          tam - 1
-        )
+        const nuevaFila = Math.min(Math.max(Math.round(ultimaFila + offsetY), 0), tam - 1)
+        const nuevaColumna = Math.min(Math.max(Math.round(ultimaColumna + offsetX), 0), tam - 1)
   
-        const enMargen = Math.abs(e.translationX - offsetX * tamCelda) <= margenError &&
-                         Math.abs(e.translationY - offsetY * tamCelda) <= margenError
-  
-        if ((nuevaFila !== ultimaFila || nuevaColumna !== ultimaColumna) && enMargen) {
+        if (nuevaFila !== ultimaFila || nuevaColumna !== ultimaColumna) {
           ultimaFila = nuevaFila
           ultimaColumna = nuevaColumna
           runOnJS(actualizarSeleccionTemporal)(nuevaFila, nuevaColumna)
@@ -311,7 +354,7 @@ const Crucigrama = () => {
         runOnJS(limpiarSobreCelda)()
         runOnJS(finalizarSeleccion)()
       })
-  }
+  }, [actualizarSobreCelda, limpiarSobreCelda, actualizarSeleccionTemporal, finalizarSeleccion])
 
   const tablaMemo = useMemo(() => {
     return tabla.map((fila, filaI) => (
@@ -339,10 +382,15 @@ const Crucigrama = () => {
   }, [tabla, seleccionadas, sobreCelda])
   
   return (
-    cargando ? (
-      <Loader loading={cargando} />
-    ): (restantes > 0 || timer == 0) ? (
-      <View style={estilos.contenedorGeneral}>
+    status == -2 ? (
+      <Loader loading={status == -2} />
+    ) : ( status == 1) ? (
+      <Animated.View 
+              style={[
+                  estilos.contenedorGeneral, {
+                    transform:[{translateX: animacionMov}, {translateY: animacionMov}],
+                    opacity:animacionOpacidad}]}>
+
         <ModalSalir
           modalSalirVisible = {modalSalirVisible}
           controllerNoSalir = {controllerNoSalir}
@@ -351,20 +399,33 @@ const Crucigrama = () => {
 
         <ReactNativeModal
         coverScreen = {false}
-          animationInTiming = {1000}
-          animationOutTiming = {500}
-          backdropOpacity= {0}
-          isVisible={modalActivado}
-          animationIn={'fadeInUp'}
-          animationOut={'fadeOutDown'}
-          style={estilos.modalContenedor}
-        >
-          <View style={estilos.modalContenido}>
-            <Text style={estilos.encabezado}>{"¡Has encontrado una palabra!"}</Text>
-          </View>
-        </ReactNativeModal>
+        animationInTiming = {1000}
+        animationOutTiming = {500}
+        backdropOpacity= {0}
+        isVisible={modalActivado}
+        animationIn={'fadeInUp'}
+        animationOut={'fadeOutDown'}
+        style={estilos.modalContenedor}
+      >
+
+        <View style={estilos.modalContenido}>
+          <Text style={estilos.encabezado}>{"¡Has encontrado una palabra!"}</Text>
+        </View>
+      </ReactNativeModal>
         
         <View style={estilos.contenedor}>
+          {mostrarParticulas && (
+            <Particles 
+              origin={coordenadasParticulas}
+              count={20}
+              minSize={5} 
+              maxSize={15} 
+              spread={300}  
+              duration={tiempoParticulas}  
+              color="white"
+              style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 99999 }}
+            />
+          )}
           <View style={estilos.cabecera}>
               <TouchableOpacity onPress={() => setModalSalirVisible(true)}>
                 <View style={estilos.salirContenedor}>
@@ -373,7 +434,7 @@ const Crucigrama = () => {
               </TouchableOpacity>
             <View style = {estilos.cabeceraContenedorDerecha}>
               <Text style={estilos.tiempoCabeceraStatus}>
-                { timer >= 3600 ? Math.floor(timer / 3600) + "h " + Math.floor((timer % 3600) / 60) + "m " + timer % 60 + "s ⏰" : timer < 60 ? timer + " segundos ⏰" : Math.floor(timer / 60) + "m " + timer % 60 + "s ⏰" }
+                { timerRef.current >= 3600 ? Math.floor(timerRef.current / 3600) + "h " + Math.floor((timerRef.current % 3600) / 60) + "m " + timerRef.current % 60 + "s ⏰" : timerRef.current < 60 ? timerRef.current + " segundos ⏰" : Math.floor(timerRef.current / 60) + "m " + timerRef.current % 60 + "s ⏰" }
               </Text>
               <Text style={estilos.textoCabeceraStatus}>
                 {
@@ -418,9 +479,14 @@ const Crucigrama = () => {
             </View>
           </View>
         </View>
-      </View>
-    ) : (
-      <View style={estilos.contenedorFull}>
+      </Animated.View>
+    ) : (status == 9) ? (
+      <Animated.View 
+              style={[
+                  estilos.contenedorFull, {
+                    transform:[{translateX: animacionMov}, {translateY: animacionMov}],
+                    opacity:animacionOpacidad
+                  }]}>
         {mostrarConfetti && (
           <View style={estilos.confetti}>
             <ConfettiCannon
@@ -445,19 +511,35 @@ const Crucigrama = () => {
         )}
         <Image source={logoColectivo} style={estilos.logoColectivo} resizeMode='cover'></Image>
         <Text style={estilos.tituloFullTexto}>¡Felicidades! 🎉</Text>
-        <Text style={estilos.tituloObjetivoTexto}>¡Has terminado el crucigrama!</Text>
+        <Text style={estilos.tituloObjetivoTexto}>¡Has terminado el juego!</Text>
         <Text style={estilos.tituloObjetivoTexto}>Palabras descubiertas: {elegidas.length}</Text>
-        <Text style={estilos.tituloObjetivoTexto}>Tu tiempo: {timer >= 3600 ? `${Math.floor(timer / 3600)}h ${Math.floor((timer % 3600) / 60)}m ${timer % 60}s` : timer <60 ? `${timer} segundos` : `${Math.floor(timer / 60)}m ${timer % 60}s` }</Text>
+        <Text style={estilos.tituloObjetivoTexto}>Tu tiempo: {timerRef.current >= 3600 ? `${Math.floor(timerRef.current / 3600)}h ${Math.floor((timerRef.current % 3600) / 60)}m ${timerRef.current % 60}s` : timerRef.current <60 ? `${timerRef.current} segundos` : `${Math.floor(timerRef.current / 60)}m ${timerRef.current % 60}s` }</Text>
         <Text style={estilos.tituloFullTexto}>
-          Tu promedio: ¡{Math.round((timer/elegidas.length) * Math.pow(10, 1)) / Math.pow(10, 1)} segundos por palabra!
+          Tu promedio: ¡{Math.round((timerRef.current/elegidas.length) * Math.pow(10, 1)) / Math.pow(10, 1)} segundos por palabra!
         </Text>
         <TouchableOpacity style={estilos.botonEmpezarContainer} onPress={tareaTerminada}>
           <View style={estilos.botonEmpezar}>
             <Text style={estilos.botonEmpezarTexto}>Finalizar trivia</Text>
           </View>
         </TouchableOpacity>
-      </View>
-    )
+      </Animated.View>
+    ) : status == 0 ? (
+        <Animated.View 
+                style={[
+                    estilos.contenedorFull, {
+                      transform:[{translateX: animacionMov}, {translateY: animacionMov}],
+                      opacity:animacionOpacidad
+                    }]}>
+          <Image source={logoColectivo} style={estilos.logoColectivo} resizeMode='cover'></Image>
+          <Text style={estilos.tituloFullTexto}>{"¡Equipaje de género!"}</Text>
+          <Text style={estilos.tituloObjetivoTexto}>{"¡Busca y encuentra entre la sopa de letra los diferentes conceptos!"}</Text>
+          <TouchableOpacity style={estilos.botonEmpezarContainer} onPress={play}>
+            <View style={estilos.botonEmpezar}>
+              <Text style={estilos.botonEmpezarTexto}>Empezar Juego</Text>
+            </View>
+          </TouchableOpacity>
+        </Animated.View>
+      ) : (<View><Text>¡Ay! ¡Algo ha salido mal!</Text></View>)
   )
 }
 
@@ -664,32 +746,6 @@ const estilos = StyleSheet.create({
     fontWeight: '500',
     color: pC.secundario.DEFAULT,
     textAlign: 'center'
-  },
-
-  pieContenedor: {
-    height:"10%",
-    alignItems:"center",
-    bottom:"-3%",
-    start:"25%",
-    justifyContent:"center",
-    position:"absolute",
-  },
-  botonPie: {
-    width:180,
-    padding:20,
-    borderTopLeftRadius: 30,
-    borderBottomLeftRadius: 0,
-    borderTopRightRadius: 30,
-    borderBottomRightRadius: 0,
-    backgroundColor:pC.secundario.DEFAULT+pC.transparencia[30],
-    justifyContent:"center",
-    alignItems:"center",
-  },
-  botonPieTexto: {
-    textAlign: 'center',
-    fontSize: 15,
-    fontWeight: 'bold',
-    color: pC.blanco
   },
   logoColectivo: {
     width: 200,

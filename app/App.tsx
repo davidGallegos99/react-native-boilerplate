@@ -23,6 +23,7 @@ import { ProfileScreen } from '@screens/protected/ProfileScreen'
 import { TabNavigationBar } from '@screens/protected/TabNavigationBar'
 import TriviaDetailsScreen from '@screens/protected/TriviaDetailsScreen'
 import TriviaModulesScreen from '@screens/protected/TriviaModulesScreen'
+import TriviaScreen from '@screens/protected/Game/Trivia'
 
 import Menu from './screens/protected/Game/Menu'
 import Loader from './ui/components/Loader'
