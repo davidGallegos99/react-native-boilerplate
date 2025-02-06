@@ -44,8 +44,7 @@ const Parejas = () => {
   const [primeraCarta, setPrimeraCarta] = useState<number>(-1) 
   const [primeraCartaI, setPrimeraCartaI] = useState<number>(-1) 
   const [encontrada, setEncontrada] = useState<boolean[]>([]) 
-  
-
+  const [bloqueoInput, setBloqueoInput] = useState(false) 
 
   const iniciarConfetti = () => {
     setMostrarConfetti(true)
@@ -239,58 +238,58 @@ const Parejas = () => {
   const girarTarjetas = (index1: number, index2: number) => {
     if (!girosAnimados[index1] || !girosAnimados[index2]) return
   
-    const nuevasCaras = [...mostrandoCara]
-    nuevasCaras[index1] = !nuevasCaras[index1]
-    nuevasCaras[index2] = !nuevasCaras[index2]
-    setMostrandoCara(nuevasCaras) 
-  
-    Animated.parallel([
+    Animated.sequence([
       Animated.timing(girosAnimados[index1], {
-        toValue: nuevasCaras[index1] ? 1 : 0,
+        toValue: mostrandoCara[index1] ? 1 : 0,
         duration: 500,
         useNativeDriver: true
       }),
       Animated.timing(girosAnimados[index2], {
-        toValue: nuevasCaras[index2] ? 1 : 0,
+        toValue: mostrandoCara[index2] ? 0 : 1,
         duration: 500,
         useNativeDriver: true
       })
-    ]).start()
-  }
-  
+    ]).start(() => {
+      const nuevasCaras = [...mostrandoCara]
+      nuevasCaras[index1] = !nuevasCaras[index1]
+      nuevasCaras[index2] = !nuevasCaras[index2]
+      setMostrandoCara(nuevasCaras)
+    })
+  }  
 
   const comprobarClic = (indice: number) => {
-    if (indice === primeraCartaI || encontrada[indice] || !mostrandoCara[indice]) return
-  
+    if (bloqueoInput || indice === primeraCartaI || encontrada[indice] || !mostrandoCara[indice]) return
+
     let id = tarjetas[indice].idPareja
-  
-    if (contadorCartas === 0) {
-      girarTarjeta(indice) // Gira la primera carta
-      setPrimeraCarta(id)
-      setPrimeraCartaI(indice)
-      setContadorCartas(1)
-    } else if (contadorCartas === 1) {
-      setContadorCartas(2) // Bloquea más clics mientras evalúa
-      girarTarjetas(primeraCartaI, indice) // Gira ambas a la vez
-  
-      setTimeout(() => {
-        if (primeraCarta === id) {
-          let encontradaTemp = [...encontrada]
+
+    if (contadorCartas<=1){
+      girarTarjeta(indice)
+      if (contadorCartas == 0){
+        setPrimeraCarta(id)
+        setPrimeraCartaI(indice)
+      } else {
+        if (primeraCarta == id){
+          let encontradaTemp = encontrada
           encontradaTemp[primeraCartaI] = true
           encontradaTemp[indice] = true
           setEncontrada(encontradaTemp)
           playSound("punto")
           iniciarParticulas()
-        } else {
+        }else{
           setTimeout(() => {
-            girarTarjetas(primeraCartaI, indice) // Volver a girarlas si no coinciden
+            girarTarjetas(primeraCartaI, indice)
+            setContadorCartas(0)
           }, 800)
         }
-        setContadorCartas(0)
-      }, 700)
+      }
+    } else {
+      if (primeraCarta == id){
+        
+
+      }
     }
+    setContadorCartas(contadorCartas+1)
   }
-  
 
   return (
     status ==-2 ? (
