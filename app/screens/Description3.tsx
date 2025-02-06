@@ -27,7 +27,7 @@ const Description3Screen = ({ navigation }: Props) => {
     setpatreons(res.data)
     setTimeout(() => {
       navigation.navigate('Main')
-    }, 3000)
+    }, 5000)
   }
 
   useEffect(() => {

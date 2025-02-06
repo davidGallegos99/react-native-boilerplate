@@ -1,53 +1,40 @@
 import React, { useRef, useState } from 'react'
-import { Dimensions, FlatList, Image, StyleSheet, TouchableOpacity, View } from 'react-native'
+import { Dimensions, FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 
 import Arrow from '../../assets/icons/arrow.svg'
-import { ScrollView } from 'react-native-gesture-handler'
-
-import { CarrouselImg } from '@services/home/GetCrrouselmages.service'
+import { NewsItem } from 'interfaces/News'
 
 const { width } = Dimensions.get('window')
 
-const Carousel = ({ data, onImagePress }: { data: CarrouselImg[]; onImagePress: (image: string) => void }) => {
+const Carousel = ({ data, onImagePress }: { data: NewsItem[]; onImagePress: (image: NewsItem) => void }) => {
   const [currentIndex, setCurrentIndex] = useState(0)
   const flatListRef: any = useRef(null)
 
   const handleNext = () => {
     if (currentIndex < data.length - 1) {
       setCurrentIndex(currentIndex + 1)
-      flatListRef?.current.scrollToIndex({ index: currentIndex + 1 })
+      flatListRef?.current.scrollToIndex({ index: currentIndex + 1, animated: true })
     }
   }
 
   const handlePrev = () => {
     if (currentIndex > 0) {
       setCurrentIndex(currentIndex - 1)
-      flatListRef.current.scrollToIndex({ index: currentIndex - 1 })
+      flatListRef.current.scrollToIndex({ index: currentIndex - 1, animated: true })
     }
   }
 
-  const renderItem = ({ item }: { item: CarrouselImg }) => (
-    <TouchableOpacity
-      style={[styles.item, { backgroundColor: item.color || '#FFFFFF' }]}
-      onPress={() => onImagePress(item.image_file_content)}
-    >
-      <Image
-        style={{ width: '100%', height: '100%' }}
-        source={{
-          uri: item.image_file_content
-        }}
-      />
+  const renderItem = ({ item }: { item: NewsItem }) => (
+    <TouchableOpacity style={styles.item} onPress={() => onImagePress(item)}>
+      <Image source={{ uri: item.cover_image_url }} style={styles.image} />
+      <View style={styles.overlay}>
+        <Text style={styles.text}>{item.title}</Text>
+      </View>
     </TouchableOpacity>
   )
 
   return (
-    <ScrollView horizontal style={styles.container}>
-      <TouchableOpacity onPress={handlePrev} style={{ ...styles.arrow, ...styles.arrowLeft }}>
-        <Arrow style={{ transform: [{ rotate: '180deg' }] }} width={12} height={12} />
-      </TouchableOpacity>
-      <TouchableOpacity onPress={handleNext} style={{ ...styles.arrow, ...styles.arrowRight }}>
-        <Arrow width={12} height={12} />
-      </TouchableOpacity>
+    <View style={styles.container}>
       <FlatList
         ref={flatListRef}
         data={data}
@@ -55,9 +42,9 @@ const Carousel = ({ data, onImagePress }: { data: CarrouselImg[]; onImagePress: 
         showsHorizontalScrollIndicator={false}
         renderItem={renderItem}
         keyExtractor={item => item.id.toString()}
-        scrollEnabled={false} // Desactiva el scroll manual para que solo funcione con las flechas.
-        style={styles.carousel}
+        scrollEnabled={false}
         pagingEnabled
+        style={styles.carousel}
         onScrollToIndexFailed={info => {
           const wait = new Promise(resolve => setTimeout(resolve, 500))
           wait.then(() => {
@@ -65,44 +52,78 @@ const Carousel = ({ data, onImagePress }: { data: CarrouselImg[]; onImagePress: 
           })
         }}
       />
-    </ScrollView>
+      <TouchableOpacity onPress={handlePrev} style={{ ...styles.arrow, ...styles.arrowLeft }}>
+        <Arrow style={{ transform: [{ rotate: '180deg' }] }} width={12} height={12} />
+      </TouchableOpacity>
+      <TouchableOpacity onPress={handleNext} style={{ ...styles.arrow, ...styles.arrowRight }}>
+        <Arrow width={12} height={12} />
+      </TouchableOpacity>
+    </View>
   )
 }
 
 const styles = StyleSheet.create({
   container: {
-    position: 'relative'
+    position: 'relative',
+    width: '100%',
+    height: 200,
+    alignItems: 'center',
+    justifyContent: 'center'
   },
   carousel: {
-    width: width * 1,
+    width: width,
     height: 200
   },
   item: {
-    width: width * 1,
+    width: width,
     height: 200,
     justifyContent: 'center',
-    alignItems: 'center'
+    alignItems: 'center',
+    position: 'relative',
+    borderRadius: 20,
+    overflow: 'hidden'
   },
-  arrowLeft: {
-    left: 10,
-    paddingRight: 2
+  image: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 20
   },
-  arrowRight: {
-    right: 10,
-    paddingLeft: 2
+  overlay: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+    backgroundColor: 'rgba(157, 71, 178, 0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 20
+  },
+  text: {
+    marginRight: '10%',
+    marginLeft: '10%',
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    paddingHorizontal: 10
   },
   arrow: {
-    backgroundColor: '#9D47B2',
+    backgroundColor: '#FF6200',
     borderRadius: 50,
-    textAlign: 'center',
-    width: 32,
-    height: 32,
+    width: 40,
+    height: 40,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    top: width * 0.2,
     position: 'absolute',
-    zIndex: 1000
+    zIndex: 10,
+    top: '50%',
+    transform: [{ translateY: -20 }]
+  },
+  arrowLeft: {
+    left: 15
+  },
+  arrowRight: {
+    right: 15
   }
 })
 

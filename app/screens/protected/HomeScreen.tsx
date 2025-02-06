@@ -1,21 +1,24 @@
 /* eslint-disable react-native/no-inline-styles */
 import { useEffect, useState } from 'react'
-import { Dimensions, FlatList, Image, Modal, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native'
+import { Dimensions, FlatList, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 
 import Logo from '../../../logo.svg'
 import Loader from '../../ui/components/Loader'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { Emotion } from 'interfaces/Emotion.interface'
-import { HomeImage } from 'interfaces/GetHomeImgs.interface'
+import { Gallery, GalleryImage } from 'interfaces/GetGallery'
+import { NewsItem } from 'interfaces/News'
 
 import Carousel from '@ui/components/Carousel'
-import ImageModal from '@ui/components/ImageModal'
+import GalleryModal from '@ui/components/GalleryModal'
+import NewsModal from '@ui/components/NewsModal'
 import { SliderCard, SliderVideoCard } from '@ui/components/SliderCard'
 
 import { storeData } from '@services/AsyncStorage.service'
 import { GetEmotions } from '@services/GetEmotions.service'
-import { IGetVideos, Video } from '@services/Videos.service'
-import { CarrouselImg, GetCarrouselImages } from '@services/home/GetCrrouselmages.service'
+import { TiktokItem, getTikTokVideos } from '@services/Tiktok.service'
+import { Video } from '@services/Videos.service'
+import { CarrouselImg, GetCarrouselImages, GetNews } from '@services/home/GetCrrouselmages.service'
 import { GetImagesHome } from '@services/home/GetHomeImages.service'
 import { createDailyEmotion } from '@services/setDailyEmotion'
 
@@ -28,17 +31,22 @@ import ModalComponent from './Modal'
 
 const { width, height } = Dimensions.get('window')
 export function HomeScreen() {
-  const renderItem = (item: HomeImage) => <SliderCard item={item} />
-  const renderVideoItem = (item: Video) => <SliderVideoCard item={item} />
+  const renderVideoItem = (item: TiktokItem) => <SliderVideoCard item={item} />
   const [loading, setLoading] = useState<boolean>(true)
-  const [firtSlider, setFirstSlider] = useState<HomeImage[]>([])
-  const [imgsHome, setimgsHome] = useState<HomeImage[]>([])
+  const [imgsHome, setimgsHome] = useState<Gallery[]>([])
   const [emotions, setEmotions] = useState<Emotion[]>([])
-  const [carrouselImgs, setCarrouselImgs] = useState<CarrouselImg[]>([])
+  const [newsData, setNewsData] = useState<NewsItem[]>([])
   const [isModalVisible, setIsModalVisible] = useState(false)
-  const [videos, setvideos] = useState<Video[]>([])
+  const [videos, setvideos] = useState<TiktokItem[]>([])
   const [isImageModalVisible, setIsImageModalVisible] = useState(false)
-  const [selectedImage, setSelectedImage] = useState<string | null>(null)
+  const [showModalNews, setShowModalNews] = useState(false)
+  const [infNews, setInfNews] = useState<{
+    title: string
+    body: string
+    cover_image_url: string
+  } | null>(null)
+
+  const [selectedImage, setSelectedImage] = useState<GalleryImage[]>([])
 
   const handleEmotionSelect = async (emotion: string) => {
     try {
@@ -52,7 +60,10 @@ export function HomeScreen() {
       return null
     }
   }
-
+  const selectNew = (title: string, body: string, cover_image_url: string) => {
+    setShowModalNews(true)
+    setInfNews({ title, body, cover_image_url })
+  }
   const checkModalVisibility = async () => {
     try {
       const lastShownDate = await AsyncStorage.getItem('lastModalDate')
@@ -67,53 +78,25 @@ export function HomeScreen() {
   }
 
   const getVideos = async () => {
-    const res = await api.get<IGetVideos>('/api/v1/videos/home-videos')
-    setvideos([...res.data.data])
+    const res = await getTikTokVideos()
+    setvideos(res.data)
   }
 
   const getHomeImage = async () => {
     try {
       const imgs = await GetImagesHome()
-      const carrousel = await GetCarrouselImages()
+      const news = await GetNews()
       setimgsHome(imgs.data)
-      setCarrouselImgs(carrousel.data)
+      setNewsData(news.data)
     } catch (error) {
     } finally {
       setLoading(false)
     }
   }
 
-  const handleImagePress = (image: string) => {
-    setSelectedImage(image)
+  const handleImagePress = (gallery_images: GalleryImage[]) => {
+    setSelectedImage(gallery_images)
     setIsImageModalVisible(true)
-  }
-  const buildFirst = async () => {
-    setFirstSlider([
-      {
-        id: 1,
-        image_file_title: 'Imagen 1',
-        image_file_content: img1,
-        image_file_description: 'Imagen 1',
-        image_file_status: 1,
-        image_file_shows_in: 0
-      },
-      {
-        id: 2,
-        image_file_title: 'Imagen 2',
-        image_file_content: img2,
-        image_file_description: 'Imagen 2',
-        image_file_status: 1,
-        image_file_shows_in: 0
-      },
-      {
-        id: 3,
-        image_file_title: 'Imagen 3',
-        image_file_content: img1,
-        image_file_description: 'Imagen 3',
-        image_file_status: 1,
-        image_file_shows_in: 0
-      }
-    ])
   }
 
   const fetchEmotions = async () => {
@@ -126,7 +109,6 @@ export function HomeScreen() {
     fetchEmotions()
     getVideos()
     checkModalVisibility()
-    buildFirst()
   }, [])
 
   if (loading) {
@@ -149,7 +131,7 @@ export function HomeScreen() {
           style={{ marginBottom: 30 }}
           data={imgsHome}
           renderItem={({ item }) => (
-            <TouchableOpacity onPress={() => handleImagePress(item.image_file_content)}>
+            <TouchableOpacity onPress={() => handleImagePress(item.gallery_images)}>
               <SliderCard item={item} />
             </TouchableOpacity>
           )}
@@ -159,7 +141,8 @@ export function HomeScreen() {
           contentContainerStyle={styles.listContainer}
         />
 
-        <Carousel data={carrouselImgs} onImagePress={handleImagePress} />
+        <Text style={{ color: '#FF00A6', fontSize: 20, marginBottom: 10 }}>Noticias de la semana</Text>
+        <Carousel data={newsData} onImagePress={data => selectNew(data.title, data.body, data.cover_image_url)} />
         <FlatList
           style={{ marginTop: 30, marginBottom: 150 }}
           data={videos}
@@ -170,7 +153,12 @@ export function HomeScreen() {
           contentContainerStyle={styles.listContainer}
         />
       </View>
-      <ImageModal isVisible={isImageModalVisible} onClose={() => setIsImageModalVisible(false)} image={selectedImage} />
+      <GalleryModal images={selectedImage} isOpen={isImageModalVisible} onClose={() => setIsImageModalVisible(false)} />
+      <NewsModal
+        news={infNews || { title: '', body: '', cover_image_url: '' }}
+        isOpen={showModalNews}
+        onClose={() => setShowModalNews(false)}
+      />
     </ScrollView>
   )
 }

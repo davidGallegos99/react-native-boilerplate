@@ -1,3 +1,5 @@
+import { INews } from 'interfaces/News'
+
 import api from '@config/axiosConfig'
 
 export interface IGetCarrouselImgs {
@@ -18,6 +20,16 @@ export interface CarrouselImg {
 export const GetCarrouselImages = async (): Promise<IGetCarrouselImgs> => {
   try {
     const response = await api.get<IGetCarrouselImgs>('/api/v1/images/carousel-images')
+    return response.data
+  } catch (error) {
+    console.error('Error al obtener imagenes home:', error)
+    throw error
+  }
+}
+
+export const GetNews = async (): Promise<INews> => {
+  try {
+    const response = await api.get<INews>('/api/v1/news')
     return response.data
   } catch (error) {
     console.error('Error al obtener imagenes home:', error)

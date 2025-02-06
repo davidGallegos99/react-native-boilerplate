@@ -80,7 +80,7 @@ function LoginScreen({ navigation }: Props) {
   }, [isLocked, lockTime])
 
   const handleLoginWithGoogle = () => {
-    Alert.alert('Registro con Google', 'Has presionado REGISTRAR CON GOOGLE')
+    Alert.alert('Registro con Google', 'Estamos trabajando en ello')
   }
 
   const handleLoginWithEmailAndPassword = async (data: { email: string; password: string }) => {
