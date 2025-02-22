@@ -641,6 +641,7 @@ const estilos = StyleSheet.create({
   },
 
   respuestaTexto: {
+    maxWidth: 225,
     fontSize: 15,
     fontWeight: '500',
     color: pC.blanco,

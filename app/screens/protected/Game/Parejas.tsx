@@ -15,6 +15,7 @@ const { width, height } = Dimensions.get('window')
 
 const Parejas = () => {
   const [status, setStatus] = useState(0)
+  const [logoModal, setLogoModal] = useState<ImageSourcePropType>(require ('./src/logoColectivo.png'))
   const [encabezado, setEncabezado] = useState<string>("")
   const [descripcion, setDescripcion] = useState<string>("")
   const [botonModalTexto, setBotonModalTexto] = useState <string>("")
@@ -44,7 +45,11 @@ const Parejas = () => {
   const [primeraCarta, setPrimeraCarta] = useState<number>(-1) 
   const [primeraCartaI, setPrimeraCartaI] = useState<number>(-1) 
   const [encontrada, setEncontrada] = useState<boolean[]>([]) 
-  const [bloqueoInput, setBloqueoInput] = useState(false) 
+  const [bloqueoInput, setBloqueoInput] = useState(false)
+  const bloqueoRef = useRef(false)
+  const timerRef = useRef(0)
+  const [displayTimer, setDisplayTimer] = useState(0)
+  const [enMarcha, setEnMarcha] = useState<boolean>(false)
 
   const iniciarConfetti = () => {
     setMostrarConfetti(true)
@@ -62,7 +67,10 @@ const Parejas = () => {
     navigation.goBack()
   }
 
-  const okay = () => {setModalActivado(false)}
+  const okay = () => {
+    setModalActivado(false)
+    if(encontrada.every(Boolean)) {victoria()}
+  }
   const error = () => {setStatus (-1)}
   const aInicio = () => {setStatus (0)}
   const continuar = () => {setStatus (2)}
@@ -83,61 +91,73 @@ const Parejas = () => {
   type Carta = {
     idPareja: number
     emocion: string
+    definicion: string
     imagen: ImageSourcePropType
   }
 
   const cartas: Carta[] = [
     {
       idPareja: 1,
-      emocion:"Felicidad",
+      emocion: "Felicidad",
+      definicion: "La felicidad es una emoción positiva que refleja bienestar, satisfacción y alegría ante situaciones placenteras o logros personales.",
       imagen: require('./src/icons/parejas/Felicidad.jpg'),
     },
     {
       idPareja: 3,
-      emocion:"Enojo",
+      emocion: "Enojo",
+      definicion: "El enojo es una respuesta emocional a la frustración o a una situación percibida como injusta, que puede generar irritabilidad y tensión.",
       imagen: require('./src/icons/parejas/Enojo.jpg'),
     },
     {
       idPareja: 5,
-      emocion:"Ira",
+      emocion: "Ira",
+      definicion: "La ira es una emoción intensa caracterizada por el enfado extremo, que puede surgir ante una amenaza o una injusticia y motivar la defensa o confrontación.",
       imagen: require('./src/icons/parejas/Ira.jpg'),
     },
     {
       idPareja: 7,
-      emocion:"Sorpresa",
+      emocion: "Sorpresa",
+      definicion: "La sorpresa es una reacción espontánea ante lo inesperado, que puede ser positiva o negativa, generando asombro y una respuesta rápida de adaptación.",
       imagen: require('./src/icons/parejas/Sorpresa.jpg'),
     },
     {
       idPareja: 9,
-      emocion:"Tristeza",
+      emocion: "Tristeza",
+      definicion: "La tristeza es una emoción que surge ante la pérdida, el desánimo o la frustración, expresándose a menudo con llanto, melancolía o introspección.",
       imagen: require('./src/icons/parejas/Tristeza.jpg'),
     },
     {
       idPareja: 11,
-      emocion:"Asco",
+      emocion: "Asco",
+      definicion: "El asco es una emoción de rechazo o aversión ante algo desagradable, como olores, sabores o comportamientos moralmente inaceptables.",
       imagen: require('./src/icons/parejas/Asco.jpg'),
     },
     {
       idPareja: 13,
-      emocion:"Preocupación",
+      emocion: "Preocupación",
+      definicion: "La preocupación es un estado de inquietud o ansiedad sobre un problema o situación futura, que genera pensamientos constantes y tensión emocional.",
       imagen: require('./src/icons/parejas/Preocupacion.jpg'),
     },
     {
       idPareja: 15,
-      emocion:"Tranquilidad",
+      emocion: "Tranquilidad",
+      definicion: "La tranquilidad es un estado de calma y paz interior, caracterizado por la ausencia de estrés o ansiedad, que permite la relajación y el bienestar.",
       imagen: require('./src/icons/parejas/Tranquilidad.jpg'),
     },
     {
       idPareja: 17,
-      emocion:"Admiración",
+      emocion: "Admiración",
+      definicion: "La admiración es un sentimiento de aprecio y respeto hacia algo o alguien que se percibe como excepcional o inspirador.",
       imagen: require('./src/icons/parejas/Admiracion.jpg'),
     },
     {
       idPareja: 19,
-      emocion:"Vergüenza",
+      emocion: "Vergüenza",
+      definicion: "La vergüenza es una emoción que surge al sentirse expuesto o juzgado negativamente por otros, provocando incomodidad y deseo de ocultarse.",
       imagen: require('./src/icons/parejas/Verguenza.jpg'),
     }
   ]
+
 
   const tareaTerminada = async () => {
     navigation.goBack()
@@ -165,6 +185,18 @@ const Parejas = () => {
     tarjetas.forEach((_, index) => {nuevosGiros[index] = new Animated.Value(0)})
     setGirosAnimados(nuevosGiros)
   }, [tarjetas])
+
+  useEffect(() => {
+      let intervalo: NodeJS.Timeout
+      if (enMarcha) {
+        intervalo = setInterval(() => {
+          timerRef.current += 1
+          setDisplayTimer(timerRef.current)
+        }, 1000)
+      }
+  
+      return () => {clearInterval(intervalo)}
+    }, [enMarcha])
 
   useEffect(() => {
     animacionMov.setValue(0)
@@ -212,84 +244,106 @@ const Parejas = () => {
     let barajadas = [...seleccionadas, ...duplicado].sort(() => Math.random() - 0.5)
     setTarjetas(barajadas)
 
-    setMostrandoCara(Array(barajadas.length).fill(true))
+    setMostrandoCara(Array(barajadas.length).fill(false))
     setEncontrada(Array(barajadas.length).fill(false))
     setGiros(barajadas.map(() => Math.random() * (anguloMax - anguloMin) + anguloMin))
 
     let girosIniciales: { [key: number]: Animated.Value } = {}
     tarjetas.forEach((tarjeta, index) => {girosIniciales[index] = new Animated.Value(0)})
     setGirosAnimados(girosIniciales)
+    setEnMarcha(true)
   }
 
-  const girarTarjeta = (index: number) => {
+  const girarTarjeta = (index: number, callback?: () => void) => {
     if (!girosAnimados[index]) return
-  
     Animated.timing(girosAnimados[index], {
-      toValue: mostrandoCara[index] ? 1 : 0,
+      toValue: mostrandoCara[index] ? 0 : 1,
       duration: 500,
       useNativeDriver: true
     }).start(()=>{
-      const nuevaCara = [...mostrandoCara]
-      nuevaCara[index] = !nuevaCara[index]
-      setMostrandoCara(nuevaCara)
+      const nuevasCaras = mostrandoCara
+      nuevasCaras[index] = !nuevasCaras[index]
+      setMostrandoCara(nuevasCaras)
+      if (callback) callback()
     })
   }
 
-  const girarTarjetas = (index1: number, index2: number) => {
+  const girarTarjetas = (index1: number, index2: number, callback?: () => void) => {
     if (!girosAnimados[index1] || !girosAnimados[index2]) return
   
-    Animated.sequence([
+    Animated.parallel([
       Animated.timing(girosAnimados[index1], {
-        toValue: mostrandoCara[index1] ? 1 : 0,
-        duration: 500,
+        toValue: mostrandoCara[index1] ? 0 : 1,
+        duration: 400,
         useNativeDriver: true
       }),
       Animated.timing(girosAnimados[index2], {
         toValue: mostrandoCara[index2] ? 0 : 1,
-        duration: 500,
+        duration: 400,
         useNativeDriver: true
       })
     ]).start(() => {
-      const nuevasCaras = [...mostrandoCara]
+      const nuevasCaras = mostrandoCara
       nuevasCaras[index1] = !nuevasCaras[index1]
       nuevasCaras[index2] = !nuevasCaras[index2]
       setMostrandoCara(nuevasCaras)
+      if (callback) callback()
     })
   }  
 
   const comprobarClic = (indice: number) => {
-    if (bloqueoInput || indice === primeraCartaI || encontrada[indice] || !mostrandoCara[indice]) return
+    const actual = tarjetas[indice].idPareja
 
-    let id = tarjetas[indice].idPareja
+    if (bloqueoRef.current || indice === primeraCartaI || encontrada[indice]) return
+    bloqueoRef.current = true
 
-    if (contadorCartas<=1){
-      girarTarjeta(indice)
-      if (contadorCartas == 0){
-        setPrimeraCarta(id)
+    setContadorCartas(prevContador => {
+      const nuevoContador = prevContador + 1
+
+      if (nuevoContador === 1) {
+        setPrimeraCarta(actual)
         setPrimeraCartaI(indice)
-      } else {
-        if (primeraCarta == id){
-          let encontradaTemp = encontrada
-          encontradaTemp[primeraCartaI] = true
-          encontradaTemp[indice] = true
-          setEncontrada(encontradaTemp)
-          playSound("punto")
-          iniciarParticulas()
-        }else{
-          setTimeout(() => {
-            girarTarjetas(primeraCartaI, indice)
+        girarTarjeta(indice)
+        bloqueoRef.current = false
+      } else if (nuevoContador === 2) {
+        girarTarjeta(indice, () => {
+          const esParejaCorrecta = Math.abs(primeraCarta - actual) === 1 && Math.min(primeraCarta, actual) % 2 === 1
+          if (esParejaCorrecta) {
+            let encontradaTemp = [...encontrada]
+            encontradaTemp[primeraCartaI] = true
+            encontradaTemp[indice] = true
+            
+            setEncontrada(encontradaTemp)
+            setPrimeraCarta(-1)
+            setPrimeraCartaI(-1)
             setContadorCartas(0)
-          }, 800)
-        }
-      }
-    } else {
-      if (primeraCarta == id){
-        
+            bloqueoRef.current = false
 
+            setLogoModal(tarjetas[indice].imagen)
+            setEncabezado("¡Excelente! ¡Has encontrado una nueva emoción!")
+            setDescripcion(tarjetas[indice].definicion)
+            setBotonModalTexto("¡De acuerdo!")
+            setModalActivado(true)
+            playSound("punto")
+            
+            setTimeout(() => {
+              iniciarParticulas()
+            }, 200)
+          } else {
+            setTimeout(() => {
+              girarTarjetas(primeraCartaI, indice, () => {
+                setPrimeraCarta(-1)
+                setPrimeraCartaI(-1)
+                setContadorCartas(0)
+              })}, 500)
+            setTimeout(()=>bloqueoRef.current = false, 200)
+          }
+        })
       }
-    }
-    setContadorCartas(contadorCartas+1)
-  }
+      return nuevoContador
+    })
+}
+
 
   return (
     status ==-2 ? (
@@ -312,7 +366,7 @@ const Parejas = () => {
           animationOut={'fadeOut'}
           style={estilos.modalContenedor}>
           <View style={estilos.modalContenido}>
-            <Image source={logoColectivo} style={estilos.logoModal} resizeMode='cover'></Image>
+            <Image source={logoModal} style={estilos.logoModal} resizeMode='cover'></Image>
             <Text style={estilos.encabezado}>{encabezado}</Text>
             <Text style={estilos.descripcion}>{descripcion}</Text>
             <TouchableOpacity style={estilos.botonModal} onPress={okay}>
@@ -389,12 +443,12 @@ const Parejas = () => {
                 }) || 0
 
                 return (
-                  <TouchableOpacity disabled={encontrada[index]} key={index} onPress={() => comprobarClic(index)}
-                    style={{ transform: [{ rotate: `${giros[index]}deg` }] }}>
+                  <TouchableOpacity disabled={encontrada[index] || bloqueoRef.current} key={index} onPress={() => comprobarClic(index)}
+                    style={{ transform: [{ rotate: `${giros[index]}deg` }], opacity: encontrada[index] ? 0 : 1 }}>
                     <Animated.View style={[estilos.carta,{transform: [{ rotateY: interpolacionRotacion }, { scale: interpolacionZoom }]}]}>
                       <Animated.View style={{ 
                           opacity: opacityFront, 
-                          position: "absolute", 
+                          position: "absolute",
                           backfaceVisibility: 'hidden', 
                           width: '100%', 
                           height: '100%',
@@ -499,6 +553,7 @@ const estilos = StyleSheet.create({
     elevation: 10,
     pointerEvents: 'none'
   },
+
   contenedorGeneral: {
     flex: 1,
     justifyContent: 'center',
@@ -562,7 +617,7 @@ const estilos = StyleSheet.create({
     height: 145,
     margin: 2,
     borderRadius: 10,
-    borderColor:pC.terciario.oscuro,
+    borderColor:pC.terciario.DEFAULT,
     borderWidth: 5
   },
 
@@ -632,6 +687,7 @@ const estilos = StyleSheet.create({
     position: 'relative',
     backgroundColor: 'transparent'
   },
+
   modalContenido: {
     backgroundColor: pC.primario.claro,
     justifyContent: 'space-between',
@@ -651,18 +707,21 @@ const estilos = StyleSheet.create({
     margin: 15,
     marginTop: 50,
     textAlign: 'center',
-    fontSize: 15,
-    fontWeight: '600'
+    fontSize: 20,
+    paddingTop: 10,
+    fontWeight: 'bold'
   },
 
   descripcion: {
-    color: pC.blanco,
-    margin: 15,
-    marginTop: 50,
+    color: pC.primario.DEFAULT,
+    marginHorizontal: 15,
+    marginBottom: 20,
     textAlign: 'center',
-    fontSize: 10,
-    paddingTop: 20,
-    fontWeight: '600'
+    fontSize: 15,
+    fontWeight: '500',
+    backgroundColor:pC.blanco + pC.transparencia[50],
+    borderRadius: 15,
+    padding: 15
   },
 
   botonModal: {
