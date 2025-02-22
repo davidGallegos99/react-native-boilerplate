@@ -49,6 +49,7 @@ const Parejas = () => {
   const bloqueoRef = useRef(false)
   const timerRef = useRef(0)
   const [displayTimer, setDisplayTimer] = useState(0)
+  const [movimientos, setMovimientos] = useState(0)
   const [enMarcha, setEnMarcha] = useState<boolean>(false)
 
   const iniciarConfetti = () => {
@@ -236,6 +237,7 @@ const Parejas = () => {
     finalizar()
     iniciarConfetti()
     playSound("victoria")
+    setEnMarcha(false)
   }
 
   const inicializar = () => {
@@ -296,7 +298,7 @@ const Parejas = () => {
 
     if (bloqueoRef.current || indice === primeraCartaI || encontrada[indice]) return
     bloqueoRef.current = true
-
+    setMovimientos(movimientos + 1)
     setContadorCartas(prevContador => {
       const nuevoContador = prevContador + 1
 
@@ -336,7 +338,7 @@ const Parejas = () => {
                 setPrimeraCartaI(-1)
                 setContadorCartas(0)
               })}, 500)
-            setTimeout(()=>bloqueoRef.current = false, 200)
+            setTimeout(()=>bloqueoRef.current = false,550)
           }
         })
       }
@@ -411,8 +413,13 @@ const Parejas = () => {
               </View>
             </TouchableOpacity>
             <View style = {estilos.cabeceraContenedorDerecha}>
+              <Text style={estilos.tiempoCabeceraStatus}>
+                { timerRef.current >= 3600 ? Math.floor(timerRef.current / 3600) + "h " + Math.floor((timerRef.current % 3600) / 60) + "m " + timerRef.current % 60 + "s ⏰" : timerRef.current < 60 ? timerRef.current + " segundos ⏰" : Math.floor(timerRef.current / 60) + "m " + timerRef.current % 60 + "s ⏰" }
+              </Text>
               <Text style={estilos.textoCabeceraStatus}>
-                {""}
+                {
+                  "Movimientos: " + movimientos
+                }
               </Text>
             </View>
           </View>
@@ -511,8 +518,8 @@ const Parejas = () => {
         <Image source={logoColectivo} style={estilos.logoColectivo} resizeMode='cover'></Image>
         <Text style={estilos.tituloFullTexto}>¡Felicidades! 🎉</Text>
         <Text style={estilos.tituloObjetivoTexto}>¡Has terminado el juego!</Text>
-        <Text style={estilos.tituloObjetivoTexto}>{}</Text>
-        <Text style={estilos.tituloObjetivoTexto}>{}</Text>
+        <Text style={estilos.tituloObjetivoTexto}>Cantidad de movimientos: {movimientos}</Text>
+        <Text style={estilos.tituloObjetivoTexto}>Tu tiempo: {timerRef.current >= 3600 ? `${Math.floor(timerRef.current / 3600)}h ${Math.floor((timerRef.current % 3600) / 60)}m ${timerRef.current % 60}s` : timerRef.current <60 ? `${timerRef.current} segundos` : `${Math.floor(timerRef.current / 60)}m ${timerRef.current % 60}s` }</Text>
         <Text style={estilos.tituloFullTexto}>
           {""}
         </Text>
@@ -569,13 +576,19 @@ const estilos = StyleSheet.create({
   },
 
   cabecera: {
-    alignItems: 'flex-start',
-    justifyContent: 'center'
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    flexDirection:'row'
   },
 
   textoCabeceraStatus: {
     textAlign:"right",
     fontSize:20
+  },
+
+  tiempoCabeceraStatus: {
+    textAlign:"right",
+    fontSize:15
   },
 
   salirContenedor: {
