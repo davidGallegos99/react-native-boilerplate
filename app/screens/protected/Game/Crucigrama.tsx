@@ -1,16 +1,31 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { View, Text, Button, StyleSheet, Animated, ActivityIndicator, FlatList, TouchableOpacity, Image, BackHandler, Dimensions } from "react-native"
+import {
+  ActivityIndicator,
+  Animated,
+  BackHandler,
+  Button,
+  Dimensions,
+  FlatList,
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
+} from 'react-native'
+
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native'
-import ReactNativeModal from "react-native-modal"
-import Loader from '@ui/components/Loader'
-import { GestureDetector, Gesture } from "react-native-gesture-handler"
-import { runOnJS, useSharedValue } from 'react-native-reanimated'
-import { ModalSalir } from "./src/components/modalSalir"
-import pC from './src/theme/colores'
-import Orientation from 'react-native-orientation-locker'
 import ConfettiCannon from 'react-native-confetti-cannon'
+import { Gesture, GestureDetector } from 'react-native-gesture-handler'
+import ReactNativeModal from 'react-native-modal'
+import Orientation from 'react-native-orientation-locker'
+import { runOnJS, useSharedValue } from 'react-native-reanimated'
+
+import Loader from '@ui/components/Loader'
+
+import { playSound, stopSound } from './src/components/Audio'
 import Particles from './src/components/Particulas'
-import {playSound, stopSound} from "./src/components/Audio"
+import { ModalSalir } from './src/components/modalSalir'
+import pC from './src/theme/colores'
 
 const tamCelda = 34
 const bordeCelda = 1
@@ -19,7 +34,7 @@ const { width, height } = Dimensions.get('window')
 const Crucigrama = () => {
   const [mostrarConfetti, setMostrarConfetti] = useState(false)
   const navigation = useNavigation()
-  const logoColectivo = require ('./src/logoColectivo.png')
+  const logoColectivo = require('./src/logoColectivo.png')
   const [modalSalirVisible, setModalSalirVisible] = useState<boolean>(false)
   const [status, setStatus] = useState(-2)
   const [modalActivado, setModalActivado] = useState<boolean>(false)
@@ -29,7 +44,7 @@ const Crucigrama = () => {
   const [displayTimer, setDisplayTimer] = useState(0)
   const [enMarcha, setEnMarcha] = useState<boolean>(false)
 
-  const [tabla, setTabla] = useState<string[][]>(Array.from({ length: tam }, () => Array(tam).fill("x")))
+  const [tabla, setTabla] = useState<string[][]>(Array.from({ length: tam }, () => Array(tam).fill('x')))
   const [contenedorPos, setContenedorPos] = useState({ x: 0, y: 0 })
 
   const [seleccionadas, setSeleccionadas] = useState(new Set())
@@ -38,28 +53,116 @@ const Crucigrama = () => {
   const animacionMov = useRef(new Animated.Value(-400)).current
   const animacionOpacidad = useRef(new Animated.Value(0)).current
   const [mostrarParticulas, setMostrarParticulas] = useState(false)
-  const [coordenadasParticulas, setCoordenadasParticulas] = useState<{ x: number; y: number }>({ x: width/2, y: height/2 })
+  const [coordenadasParticulas, setCoordenadasParticulas] = useState<{ x: number; y: number }>({
+    x: width / 2,
+    y: height / 2
+  })
   const tiempoParticulas = 1200
 
   const [sobreCelda, setSobreCelda] = useState(new Set())
   const sobreCeldaRef = useRef<Set<string>>(new Set())
   const sobreCeldaTimer = useRef<NodeJS.Timeout | null>(null)
 
-  let palabras = ['sexo', 'género', 'respeto', 'igualdad', 'diversidad', 'derechos', 'amor', 'libertad', 'consenso', 'cuidado', 'identidad', 'equidad', 'trans', 'lesbianas', 'bisexual', 'inclusión', 'orgullo', 'empoderar', 'feminismo', 'solidario', 'activismo', 'tolerancia', 'aceptación', 'visibilidad', 'dignidad', 'comunidad', 'valores', 'justicia', 'autonomía', 'educación', 'reconocer', 'protección', 'apoyo', 'colectivo', 'fraternidad', 'seguridad', 'sororidad', 'espectro', 'diverso', 'pride', 'lucha', 'acción', 'aceptar', 'hermandad', 'justo', 'fuerte', 'poder', 'libre', 'único', 'proteger', 'rebelde', 'voz', 'cambio', 'ser', 'gay', 'unidad', 'fraterna', 'pacífico', 'silencio', 'revolución', 'lesbiana', 'orgullosa', 'brillar', 'creer', 'educar', 'esperar', 'tolerar', 'fuerza', 'liderar', 'progreso', 'colectiva', 'inclusiva', 'respetar', 'volar', 'vibrar', 'latente']
+  let palabras = [
+    'sexo',
+    'género',
+    'respeto',
+    'igualdad',
+    'diversidad',
+    'derechos',
+    'amor',
+    'libertad',
+    'consenso',
+    'cuidado',
+    'identidad',
+    'equidad',
+    'trans',
+    'lesbianas',
+    'bisexual',
+    'inclusión',
+    'orgullo',
+    'empoderar',
+    'feminismo',
+    'solidario',
+    'activismo',
+    'tolerancia',
+    'aceptación',
+    'visibilidad',
+    'dignidad',
+    'comunidad',
+    'valores',
+    'justicia',
+    'autonomía',
+    'educación',
+    'reconocer',
+    'protección',
+    'apoyo',
+    'colectivo',
+    'fraternidad',
+    'seguridad',
+    'sororidad',
+    'espectro',
+    'diverso',
+    'pride',
+    'lucha',
+    'acción',
+    'aceptar',
+    'hermandad',
+    'justo',
+    'fuerte',
+    'poder',
+    'libre',
+    'único',
+    'proteger',
+    'rebelde',
+    'voz',
+    'cambio',
+    'ser',
+    'gay',
+    'unidad',
+    'fraterna',
+    'pacífico',
+    'silencio',
+    'revolución',
+    'lesbiana',
+    'orgullosa',
+    'brillar',
+    'creer',
+    'educar',
+    'esperar',
+    'tolerar',
+    'fuerza',
+    'liderar',
+    'progreso',
+    'colectiva',
+    'inclusiva',
+    'respetar',
+    'volar',
+    'vibrar',
+    'latente'
+  ]
 
   const [elegidas, setElegidas] = useState<string[]>([])
   const [elegidasRef, setElegidasRef] = useState<Set<string>>(new Set())
   const [restantes, setRestantes] = useState<number>(0)
-  const [restantesDeselec, setRestantesDeselec] = useState<boolean[]>([])  
+  const [restantesDeselec, setRestantesDeselec] = useState<boolean[]>([])
 
-  const cargando = () => {setStatus (-2)}
-  const aInicio = () => {setStatus (0)}
-  const play = () => {setStatus (1)}
-  const finalizar = () => {setStatus (9)}
+  const cargando = () => {
+    setStatus(-2)
+  }
+  const aInicio = () => {
+    setStatus(0)
+  }
+  const play = () => {
+    setStatus(1)
+  }
+  const finalizar = () => {
+    setStatus(9)
+  }
 
   const iniciarParticulas = () => {
     setMostrarParticulas(true)
-    setTimeout(() => setMostrarParticulas(false), tiempoParticulas+(tiempoParticulas*0.4))
+    setTimeout(() => setMostrarParticulas(false), tiempoParticulas + tiempoParticulas * 0.4)
   }
 
   const controllerSalir = () => {
@@ -67,7 +170,9 @@ const Crucigrama = () => {
     navigation.goBack()
   }
 
-  const controllerNoSalir = () => {setModalSalirVisible(false)}
+  const controllerNoSalir = () => {
+    setModalSalirVisible(false)
+  }
 
   const tareaTerminada = async () => {
     navigation.goBack()
@@ -85,7 +190,7 @@ const Crucigrama = () => {
         sobreCeldaTimer.current = setTimeout(() => {
           setSobreCelda(new Set(sobreCeldaRef.current))
           sobreCeldaTimer.current = null
-        }, 25) 
+        }, 25)
       }
     }
   }
@@ -95,34 +200,34 @@ const Crucigrama = () => {
     setSobreCelda(new Set())
   }
 
-  const finalizarSeleccion = useCallback(() => {  
+  const finalizarSeleccion = useCallback(() => {
     const celdasSeleccionadas = Array.from(seleccionadasRef.current)
     if (celdasSeleccionadas.length < 2) {
       seleccionadasRef.current.clear()
       return
     }
-  
+
     const filas = celdasSeleccionadas.map(celda => parseInt(celda.split('-')[0]))
     const columnas = celdasSeleccionadas.map(celda => parseInt(celda.split('-')[1]))
-  
+
     const esMismaFila = filas.every(fila => fila === filas[0])
     const esMismaColumna = columnas.every(columna => columna === columnas[0])
-  
+
     if (esMismaFila || esMismaColumna) {
       if (esMismaColumna && filas[0] > filas[1]) filas.reverse()
       if (esMismaFila && columnas[0] > columnas[1]) columnas.reverse()
-  
-      const palabraSel = celdasSeleccionadas.map((_, i) => tabla[filas[i]][columnas[i]]).join("")
-  
+
+      const palabraSel = celdasSeleccionadas.map((_, i) => tabla[filas[i]][columnas[i]]).join('')
+
       if (elegidasRef.has(palabraSel)) {
         seleccionadasRef.current.clear()
-  
+
         if (!modalActivado) {
           setModalActivado(true)
           setTimeout(() => setModalActivado(false), 1500)
         }
         iniciarParticulas()
-        playSound("punto")
+        playSound('punto')
         setRestantes(prev => prev - 1)
         setSeleccionadas(prev => new Set([...prev, ...celdasSeleccionadas]))
         setElegidasRef(prev => {
@@ -141,53 +246,53 @@ const Crucigrama = () => {
     seleccionadasRef.current.clear()
     if (restantes == 1) {
       finalizar()
-      playSound("victoria")
+      playSound('victoria')
     }
   }, [tabla, elegidasRef, restantes, modalActivado])
 
   useEffect(() => {
-      animacionMov.setValue(0)
-      animacionOpacidad.setValue(0)
-      switch(status){
-        case 0:{
-          animacionMov.setValue(0)
-          animacionOpacidad.setValue(0)
-  
-          Animated.parallel([
-            Animated.timing(animacionMov, {toValue: 0, duration: 400, useNativeDriver: true}),
-            Animated.timing(animacionOpacidad, {toValue: 1, duration: 400, useNativeDriver: true})
-          ]).start(() => {})
-        }
-        case 1:{
-          animacionMov.setValue(0)
-          animacionOpacidad.setValue(0)
-  
-          Animated.parallel([
-            Animated.timing(animacionMov, {toValue: 0, duration: 400, useNativeDriver: true}),
-            Animated.timing(animacionOpacidad, {toValue: 1, duration: 400, useNativeDriver: true})
-          ]).start(() => {})
-        }
-        case 9:{
-          animacionMov.setValue(0)
-          animacionOpacidad.setValue(0)
-  
-          Animated.parallel([
-            Animated.timing(animacionMov, {toValue: 0, duration: 400, useNativeDriver: true}),
-            Animated.timing(animacionOpacidad, {toValue: 1, duration: 400, useNativeDriver: true})
-          ]).start(() => {})
-        }
+    animacionMov.setValue(0)
+    animacionOpacidad.setValue(0)
+    switch (status) {
+      case 0: {
+        animacionMov.setValue(0)
+        animacionOpacidad.setValue(0)
+
+        Animated.parallel([
+          Animated.timing(animacionMov, { toValue: 0, duration: 400, useNativeDriver: true }),
+          Animated.timing(animacionOpacidad, { toValue: 1, duration: 400, useNativeDriver: true })
+        ]).start(() => {})
       }
-    }, [status])
+      case 1: {
+        animacionMov.setValue(0)
+        animacionOpacidad.setValue(0)
+
+        Animated.parallel([
+          Animated.timing(animacionMov, { toValue: 0, duration: 400, useNativeDriver: true }),
+          Animated.timing(animacionOpacidad, { toValue: 1, duration: 400, useNativeDriver: true })
+        ]).start(() => {})
+      }
+      case 9: {
+        animacionMov.setValue(0)
+        animacionOpacidad.setValue(0)
+
+        Animated.parallel([
+          Animated.timing(animacionMov, { toValue: 0, duration: 400, useNativeDriver: true }),
+          Animated.timing(animacionOpacidad, { toValue: 1, duration: 400, useNativeDriver: true })
+        ]).start(() => {})
+      }
+    }
+  }, [status])
 
   useEffect(() => {
     Orientation.lockToPortrait()
-    
+
     const cargarTabla = async () => {
       await llenarTabla(tam, tam)
     }
 
-    cargarTabla().catch((error) => {
-      console.log("Error al cargar la tabla hmmta", error)
+    cargarTabla().catch(error => {
+      console.log('Error al cargar la tabla hmmta', error)
     })
 
     return () => {
@@ -204,7 +309,9 @@ const Crucigrama = () => {
       }, 1000)
     }
 
-    return () => {clearInterval(intervalo)}
+    return () => {
+      clearInterval(intervalo)
+    }
   }, [enMarcha])
 
   useEffect(() => {
@@ -212,7 +319,9 @@ const Crucigrama = () => {
       setEnMarcha(false)
       setMostrarConfetti(true)
     } else {
-      if (status == 1){setEnMarcha(true)}
+      if (status == 1) {
+        setEnMarcha(true)
+      }
       setMostrarConfetti(false)
     }
   }, [restantes, status])
@@ -225,7 +334,9 @@ const Crucigrama = () => {
       }
       BackHandler.addEventListener('hardwareBackPress', onBackPress)
 
-      return () => { BackHandler.removeEventListener('hardwareBackPress', onBackPress) }
+      return () => {
+        BackHandler.removeEventListener('hardwareBackPress', onBackPress)
+      }
     }, [])
   )
 
@@ -235,14 +346,14 @@ const Crucigrama = () => {
   }
 
   const llenarTabla = async (filas: number, columnas: number) => {
-    try {  
+    try {
       const maxPalabras = Math.floor((filas + columnas) * 0.5)
       const minPalabras = Math.max(5, Math.floor(maxPalabras * 0.4))
       let numeroPal = Math.floor(Math.random() * (maxPalabras - minPalabras + 1)) + minPalabras
-      const nuevaTabla = Array.from({ length: filas }, () => Array.from({ length: columnas }, () => ""))
-  
+      const nuevaTabla = Array.from({ length: filas }, () => Array.from({ length: columnas }, () => ''))
+
       const palabrasEle: string[] = []
-  
+
       while (numeroPal > 0) {
         palabras = [...palabras].sort(() => Math.random() - 0.5)
 
@@ -268,10 +379,7 @@ const Crucigrama = () => {
               break
             }
 
-            if (
-              nuevaTabla[fila][columna] !== "" &&
-              nuevaTabla[fila][columna] !== palabras[0][i]
-            ) {
+            if (nuevaTabla[fila][columna] !== '' && nuevaTabla[fila][columna] !== palabras[0][i]) {
               cabe = false
               break
             }
@@ -290,23 +398,22 @@ const Crucigrama = () => {
         }
         palabras = palabras.slice(1)
       }
-  
+
       for (let fila = 0; fila < filas; fila++) {
         for (let columna = 0; columna < columnas; columna++) {
-          if (nuevaTabla[fila][columna] === "") {
+          if (nuevaTabla[fila][columna] === '') {
             nuevaTabla[fila][columna] = generarLetras()
           }
         }
       }
-  
+
       setTabla(nuevaTabla)
       setElegidas(palabrasEle)
       setElegidasRef(new Set(palabrasEle))
     } catch (error) {
-      console.log("Error al llenar la tabla:", error)
+      console.log('Error al llenar la tabla:', error)
     }
-  }  
-  
+  }
 
   useEffect(() => {
     setRestantes(elegidas.length)
@@ -316,45 +423,48 @@ const Crucigrama = () => {
     aInicio()
   }, [elegidas])
 
-  const generarGestoPan = useCallback((filaI: number, columnaI: number) => {
-    let ultimaFila = filaI
-    let ultimaColumna = columnaI
-  
-    return Gesture.Pan()
-      .onTouchesDown(() => {
-        runOnJS(actualizarSobreCelda)(filaI, columnaI)
-      })
-      .onTouchesUp(() => {
-        runOnJS(limpiarSobreCelda)()
-      })
-      .onTouchesCancelled(() => {
-        runOnJS(limpiarSobreCelda)()
-      })
-      .onStart(() => {
-        ultimaFila = filaI
-        ultimaColumna = columnaI
-        runOnJS(actualizarSeleccionTemporal)(filaI, columnaI)
-      })
-      .onUpdate((e) => {
-        'worklet'
-        const offsetX = e.translationX / tamCelda
-        const offsetY = e.translationY / tamCelda
-  
-        const nuevaFila = Math.min(Math.max(Math.round(ultimaFila + offsetY), 0), tam - 1)
-        const nuevaColumna = Math.min(Math.max(Math.round(ultimaColumna + offsetX), 0), tam - 1)
-  
-        if (nuevaFila !== ultimaFila || nuevaColumna !== ultimaColumna) {
-          ultimaFila = nuevaFila
-          ultimaColumna = nuevaColumna
-          runOnJS(actualizarSeleccionTemporal)(nuevaFila, nuevaColumna)
-        }
-        runOnJS(actualizarSobreCelda)(nuevaFila, nuevaColumna)
-      })
-      .onEnd(() => {
-        runOnJS(limpiarSobreCelda)()
-        runOnJS(finalizarSeleccion)()
-      })
-  }, [actualizarSobreCelda, limpiarSobreCelda, actualizarSeleccionTemporal, finalizarSeleccion])
+  const generarGestoPan = useCallback(
+    (filaI: number, columnaI: number) => {
+      let ultimaFila = filaI
+      let ultimaColumna = columnaI
+
+      return Gesture.Pan()
+        .onTouchesDown(() => {
+          runOnJS(actualizarSobreCelda)(filaI, columnaI)
+        })
+        .onTouchesUp(() => {
+          runOnJS(limpiarSobreCelda)()
+        })
+        .onTouchesCancelled(() => {
+          runOnJS(limpiarSobreCelda)()
+        })
+        .onStart(() => {
+          ultimaFila = filaI
+          ultimaColumna = columnaI
+          runOnJS(actualizarSeleccionTemporal)(filaI, columnaI)
+        })
+        .onUpdate(e => {
+          'worklet'
+          const offsetX = e.translationX / tamCelda
+          const offsetY = e.translationY / tamCelda
+
+          const nuevaFila = Math.min(Math.max(Math.round(ultimaFila + offsetY), 0), tam - 1)
+          const nuevaColumna = Math.min(Math.max(Math.round(ultimaColumna + offsetX), 0), tam - 1)
+
+          if (nuevaFila !== ultimaFila || nuevaColumna !== ultimaColumna) {
+            ultimaFila = nuevaFila
+            ultimaColumna = nuevaColumna
+            runOnJS(actualizarSeleccionTemporal)(nuevaFila, nuevaColumna)
+          }
+          runOnJS(actualizarSobreCelda)(nuevaFila, nuevaColumna)
+        })
+        .onEnd(() => {
+          runOnJS(limpiarSobreCelda)()
+          runOnJS(finalizarSeleccion)()
+        })
+    },
+    [actualizarSobreCelda, limpiarSobreCelda, actualizarSeleccionTemporal, finalizarSeleccion]
+  )
 
   const tablaMemo = useMemo(() => {
     return tabla.map((fila, filaI) => (
@@ -366,11 +476,7 @@ const Crucigrama = () => {
           return (
             <GestureDetector key={columnaI} gesture={generarGestoPan(filaI, columnaI)}>
               <View
-                style={[
-                  estilos.celda,
-                  isSeleccionada && estilos.celdaSeleccionada,
-                  isSobreCelda && estilos.celdaSobre
-                ]}
+                style={[estilos.celda, isSeleccionada && estilos.celdaSeleccionada, isSobreCelda && estilos.celdaSobre]}
               >
                 <Text style={estilos.celdaTexto}>{celda}</Text>
               </View>
@@ -380,166 +486,195 @@ const Crucigrama = () => {
       </View>
     ))
   }, [tabla, seleccionadas, sobreCelda])
-  
-  return (
-    status == -2 ? (
-      <Loader loading={status == -2} />
-    ) : ( status == 1) ? (
-      <Animated.View 
-              style={[
-                  estilos.contenedorGeneral, {
-                    transform:[{translateX: animacionMov}, {translateY: animacionMov}],
-                    opacity:animacionOpacidad}]}>
 
-        <ModalSalir
-          modalSalirVisible = {modalSalirVisible}
-          controllerNoSalir = {controllerNoSalir}
-          controllerSalir = {controllerSalir}>
-        </ModalSalir>
+  return status == -2 ? (
+    <Loader loading={status == -2} />
+  ) : status == 1 ? (
+    <Animated.View
+      style={[
+        estilos.contenedorGeneral,
+        {
+          transform: [{ translateX: animacionMov }, { translateY: animacionMov }],
+          opacity: animacionOpacidad
+        }
+      ]}
+    >
+      <ModalSalir
+        modalSalirVisible={modalSalirVisible}
+        controllerNoSalir={controllerNoSalir}
+        controllerSalir={controllerSalir}
+      ></ModalSalir>
 
-        <ReactNativeModal
-        coverScreen = {false}
-        animationInTiming = {1000}
-        animationOutTiming = {500}
-        backdropOpacity= {0}
+      <ReactNativeModal
+        coverScreen={false}
+        animationInTiming={1000}
+        animationOutTiming={500}
+        backdropOpacity={0}
         isVisible={modalActivado}
         animationIn={'fadeInUp'}
         animationOut={'fadeOutDown'}
         style={estilos.modalContenedor}
       >
-
         <View style={estilos.modalContenido}>
-          <Text style={estilos.encabezado}>{"¡Has encontrado una palabra!"}</Text>
+          <Text style={estilos.encabezado}>{'¡Has encontrado una palabra!'}</Text>
         </View>
       </ReactNativeModal>
-        
-        <View style={estilos.contenedor}>
-          {mostrarParticulas && (
-            <Particles 
-              origin={coordenadasParticulas}
-              count={20}
-              minSize={5} 
-              maxSize={15} 
-              spread={300}  
-              duration={tiempoParticulas}  
-              color="white"
-              style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 99999 }}
-            />
-          )}
-          <View style={estilos.cabecera}>
-              <TouchableOpacity onPress={() => setModalSalirVisible(true)}>
-                <View style={estilos.salirContenedor}>
-                  <Text style={estilos.salirContenedorContenido}>X</Text>
-                </View>
-              </TouchableOpacity>
-            <View style = {estilos.cabeceraContenedorDerecha}>
-              <Text style={estilos.tiempoCabeceraStatus}>
-                { timerRef.current >= 3600 ? Math.floor(timerRef.current / 3600) + "h " + Math.floor((timerRef.current % 3600) / 60) + "m " + timerRef.current % 60 + "s ⏰" : timerRef.current < 60 ? timerRef.current + " segundos ⏰" : Math.floor(timerRef.current / 60) + "m " + timerRef.current % 60 + "s ⏰" }
-              </Text>
-              <Text style={estilos.textoCabeceraStatus}>
-                {
-                  restantes === 1 ? "Resta 1 palabra" : "Restan " + restantes + " palabras"
-                }
-              </Text>
+
+      <View style={estilos.contenedor}>
+        {mostrarParticulas && (
+          <Particles
+            origin={coordenadasParticulas}
+            count={20}
+            minSize={5}
+            maxSize={15}
+            spread={300}
+            duration={tiempoParticulas}
+            color='white'
+            style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 99999 }}
+          />
+        )}
+        <View style={estilos.cabecera}>
+          <TouchableOpacity onPress={() => setModalSalirVisible(true)}>
+            <View style={estilos.salirContenedor}>
+              <Text style={estilos.salirContenedorContenido}>X</Text>
+            </View>
+          </TouchableOpacity>
+          <View style={estilos.cabeceraContenedorDerecha}>
+            <Text style={estilos.tiempoCabeceraStatus}>
+              {timerRef.current >= 3600
+                ? Math.floor(timerRef.current / 3600) +
+                  'h ' +
+                  Math.floor((timerRef.current % 3600) / 60) +
+                  'm ' +
+                  (timerRef.current % 60) +
+                  's ⏰'
+                : timerRef.current < 60
+                ? timerRef.current + ' segundos ⏰'
+                : Math.floor(timerRef.current / 60) + 'm ' + (timerRef.current % 60) + 's ⏰'}
+            </Text>
+            <Text style={estilos.textoCabeceraStatus}>
+              {restantes === 1 ? 'Resta 1 palabra' : 'Restan ' + restantes + ' palabras'}
+            </Text>
+          </View>
+        </View>
+
+        <View style={estilos.cuerpo}>
+          <View style={estilos.crucigramaContenedor}>
+            <View
+              style={estilos.tabla}
+              onLayout={event => {
+                const layout = event.nativeEvent.layout
+                setContenedorPos({ x: layout.x, y: layout.y })
+              }}
+            >
+              {tablaMemo}
             </View>
           </View>
 
-          <View style={estilos.cuerpo}>
-            <View style={estilos.crucigramaContenedor}>
-              <View style={estilos.tabla} onLayout={(event) => {
-              const layout = event.nativeEvent.layout;
-              setContenedorPos({ x: layout.x, y: layout.y })
-            }}>
-                {tablaMemo}
-              </View>
-            </View>
-
-            <View style={estilos.palabrasContenedor}>
-              <View style={estilos.palabrasFlat}>
-                <Text style={estilos.textoPalabrasFlat}>¡Busca estas palabras!</Text>
-                <FlatList
-                  contentContainerStyle={{
-                    flexGrow: 1,
-                    justifyContent: 'center',
-                    alignItems: 'flex-start',
-                  }}
-                  data = {elegidas}
-                  numColumns={2}
-                  keyExtractor={(item,i) => item.toString()}
-                  renderItem={({item,index})=>(
-                    <View 
-                      style={[
-                          estilos.palabras,
-                          restantesDeselec[index] && estilos.palabrasDeselec]}>
-                      <Text style={estilos.palabrasTexto}>{item}</Text>
-                    </View>
-                  )}>
-                </FlatList>
-              </View>
+          <View style={estilos.palabrasContenedor}>
+            <View style={estilos.palabrasFlat}>
+              <Text style={estilos.textoPalabrasFlat}>¡Busca estas palabras!</Text>
+              <FlatList
+                contentContainerStyle={{
+                  flexGrow: 1,
+                  justifyContent: 'center',
+                  alignItems: 'flex-start'
+                }}
+                data={elegidas}
+                numColumns={2}
+                keyExtractor={(item, i) => item.toString()}
+                renderItem={({ item, index }) => (
+                  <View style={[estilos.palabras, restantesDeselec[index] && estilos.palabrasDeselec]}>
+                    <Text style={estilos.palabrasTexto}>{item}</Text>
+                  </View>
+                )}
+              ></FlatList>
             </View>
           </View>
         </View>
-      </Animated.View>
-    ) : (status == 9) ? (
-      <Animated.View 
-              style={[
-                  estilos.contenedorFull, {
-                    transform:[{translateX: animacionMov}, {translateY: animacionMov}],
-                    opacity:animacionOpacidad
-                  }]}>
-        {mostrarConfetti && (
-          <View style={estilos.confetti}>
-            <ConfettiCannon
-              count={75}
-              origin={{ x: width/4, y: -25 }}
-              fallSpeed={3000}
-              autoStart={true}
-              explosionSpeed={350}
-              fadeOut={true}
-              autoStartDelay={0}>
-            </ConfettiCannon>
-            <ConfettiCannon
-              count={75}
-              origin={{ x: 2*width/3, y: -25 }}
-              fallSpeed={3000}
-              autoStart={true}
-              explosionSpeed={350}
-              fadeOut={true}
-              autoStartDelay={0}>
-            </ConfettiCannon>
-          </View>
-        )}
-        <Image source={logoColectivo} style={estilos.logoColectivo} resizeMode='cover'></Image>
-        <Text style={estilos.tituloFullTexto}>¡Felicidades! 🎉</Text>
-        <Text style={estilos.tituloObjetivoTexto}>¡Has terminado el juego!</Text>
-        <Text style={estilos.tituloObjetivoTexto}>Palabras descubiertas: {elegidas.length}</Text>
-        <Text style={estilos.tituloObjetivoTexto}>Tu tiempo: {timerRef.current >= 3600 ? `${Math.floor(timerRef.current / 3600)}h ${Math.floor((timerRef.current % 3600) / 60)}m ${timerRef.current % 60}s` : timerRef.current <60 ? `${timerRef.current} segundos` : `${Math.floor(timerRef.current / 60)}m ${timerRef.current % 60}s` }</Text>
-        <Text style={estilos.tituloFullTexto}>
-          Tu promedio: ¡{Math.round((timerRef.current/elegidas.length) * Math.pow(10, 1)) / Math.pow(10, 1)} segundos por palabra!
-        </Text>
-        <TouchableOpacity style={estilos.botonEmpezarContainer} onPress={tareaTerminada}>
-          <View style={estilos.botonEmpezar}>
-            <Text style={estilos.botonEmpezarTexto}>Finalizar trivia</Text>
-          </View>
-        </TouchableOpacity>
-      </Animated.View>
-    ) : status == 0 ? (
-        <Animated.View 
-                style={[
-                    estilos.contenedorFull, {
-                      transform:[{translateX: animacionMov}, {translateY: animacionMov}],
-                      opacity:animacionOpacidad
-                    }]}>
-          <Image source={logoColectivo} style={estilos.logoColectivo} resizeMode='cover'></Image>
-          <Text style={estilos.tituloFullTexto}>{"¡Equipaje de género!"}</Text>
-          <Text style={estilos.tituloObjetivoTexto}>{"¡Busca y encuentra entre la sopa de letra los diferentes conceptos!"}</Text>
-          <TouchableOpacity style={estilos.botonEmpezarContainer} onPress={play}>
-            <View style={estilos.botonEmpezar}>
-              <Text style={estilos.botonEmpezarTexto}>Empezar Juego</Text>
-            </View>
-          </TouchableOpacity>
-        </Animated.View>
-      ) : (<View><Text>¡Ay! ¡Algo ha salido mal!</Text></View>)
+      </View>
+    </Animated.View>
+  ) : status == 9 ? (
+    <Animated.View
+      style={[
+        estilos.contenedorFull,
+        {
+          transform: [{ translateX: animacionMov }, { translateY: animacionMov }],
+          opacity: animacionOpacidad
+        }
+      ]}
+    >
+      {mostrarConfetti && (
+        <View style={estilos.confetti}>
+          <ConfettiCannon
+            count={75}
+            origin={{ x: width / 4, y: -25 }}
+            fallSpeed={3000}
+            autoStart={true}
+            explosionSpeed={350}
+            fadeOut={true}
+            autoStartDelay={0}
+          ></ConfettiCannon>
+          <ConfettiCannon
+            count={75}
+            origin={{ x: (2 * width) / 3, y: -25 }}
+            fallSpeed={3000}
+            autoStart={true}
+            explosionSpeed={350}
+            fadeOut={true}
+            autoStartDelay={0}
+          ></ConfettiCannon>
+        </View>
+      )}
+      <Image source={logoColectivo} style={estilos.logoColectivo} resizeMode='cover'></Image>
+      <Text style={estilos.tituloFullTexto}>¡Felicidades! 🎉</Text>
+      <Text style={estilos.tituloObjetivoTexto}>¡Has terminado el juego!</Text>
+      <Text style={estilos.tituloObjetivoTexto}>Palabras descubiertas: {elegidas.length}</Text>
+      <Text style={estilos.tituloObjetivoTexto}>
+        Tu tiempo:{' '}
+        {timerRef.current >= 3600
+          ? `${Math.floor(timerRef.current / 3600)}h ${Math.floor((timerRef.current % 3600) / 60)}m ${
+              timerRef.current % 60
+            }s`
+          : timerRef.current < 60
+          ? `${timerRef.current} segundos`
+          : `${Math.floor(timerRef.current / 60)}m ${timerRef.current % 60}s`}
+      </Text>
+      <Text style={estilos.tituloFullTexto}>
+        Tu promedio: ¡{Math.round((timerRef.current / elegidas.length) * Math.pow(10, 1)) / Math.pow(10, 1)} segundos
+        por palabra!
+      </Text>
+      <TouchableOpacity style={estilos.botonEmpezarContainer} onPress={tareaTerminada}>
+        <View style={estilos.botonEmpezar}>
+          <Text style={estilos.botonEmpezarTexto}>Finalizar trivia</Text>
+        </View>
+      </TouchableOpacity>
+    </Animated.View>
+  ) : status == 0 ? (
+    <Animated.View
+      style={[
+        estilos.contenedorFull,
+        {
+          transform: [{ translateX: animacionMov }, { translateY: animacionMov }],
+          opacity: animacionOpacidad
+        }
+      ]}
+    >
+      <Image source={logoColectivo} style={estilos.logoColectivo} resizeMode='cover'></Image>
+      <Text style={estilos.tituloFullTexto}>{'¡Equipaje de género!'}</Text>
+      <Text style={estilos.tituloObjetivoTexto}>
+        {'¡Busca y encuentra entre la sopa de letra los diferentes conceptos!'}
+      </Text>
+      <TouchableOpacity style={estilos.botonEmpezarContainer} onPress={play}>
+        <View style={estilos.botonEmpezar}>
+          <Text style={estilos.botonEmpezarTexto}>Empezar Juego</Text>
+        </View>
+      </TouchableOpacity>
+    </Animated.View>
+  ) : (
+    <View>
+      <Text>¡Ay! ¡Algo ha salido mal!</Text>
+    </View>
   )
 }
 
@@ -625,16 +760,16 @@ const estilos = StyleSheet.create({
   cabecera: {
     alignItems: 'center',
     justifyContent: 'space-between',
-    flexDirection:'row'
+    flexDirection: 'row'
   },
 
   textoCabeceraStatus: {
-    textAlign:"right",
-    fontSize:20
+    textAlign: 'right',
+    fontSize: 20
   },
   tiempoCabeceraStatus: {
-    textAlign:"right",
-    fontSize:15
+    textAlign: 'right',
+    fontSize: 15
   },
 
   salirContenedor: {
@@ -644,7 +779,7 @@ const estilos = StyleSheet.create({
     paddingVertical: '2%',
     marginVertical: 10,
     width: 55,
-    height:55,
+    height: 55,
     borderRadius: 10,
     backgroundColor: pC.primario.DEFAULT + pC.transparencia[30]
   },
@@ -655,22 +790,22 @@ const estilos = StyleSheet.create({
     color: pC.primario.DEFAULT
   },
 
-  cabeceraContenedorDerecha:{},
+  cabeceraContenedorDerecha: {},
 
   cuerpo: {
     flex: 1,
-    marginTop: 20,
+    marginTop: 20
   },
 
   crucigramaContenedor: {
     alignItems: 'center',
-    width: '100%',
+    width: '100%'
   },
 
   tabla: {
     flexDirection: 'column'
   },
-  
+
   fila: {
     flexDirection: 'row'
   },
@@ -678,16 +813,16 @@ const estilos = StyleSheet.create({
     width: tamCelda,
     height: tamCelda,
     borderWidth: bordeCelda,
-    borderRadius:5,
+    borderRadius: 5,
     backgroundColor: pC.terciario.claro,
     borderColor: pC.primario.oscuro,
     justifyContent: 'center',
-    alignItems: 'center',
+    alignItems: 'center'
   },
   celdaTexto: {
     fontSize: 18,
-    fontWeight:'bold',
-    color:pC.primario.DEFAULT
+    fontWeight: 'bold',
+    color: pC.primario.DEFAULT
   },
   celdaSobre: {
     backgroundColor: pC.primario.claro,
@@ -695,43 +830,43 @@ const estilos = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.8,
     shadowRadius: 3,
-    elevation: 5,
+    elevation: 5
   },
   celdaSeleccionada: {
     backgroundColor: pC.secundario.claro + pC.transparencia[10],
     borderColor: pC.terciario.DEFAULT,
-    borderWidth: 2,
+    borderWidth: 2
   },
   palabrasContenedor: {
     flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    flexDirection:"row",
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
     borderRadius: 30,
     marginTop: 15,
-    backgroundColor: pC.terciario.claro + pC.transparencia[50],
+    backgroundColor: pC.terciario.claro + pC.transparencia[50]
   },
 
-  palabrasFlat:{
-    justifyContent:'center',
-    alignItems:'center',
+  palabrasFlat: {
+    justifyContent: 'center',
+    alignItems: 'center'
   },
 
   textoPalabrasFlat: {
-    marginTop:6,
-    color:pC.primario.DEFAULT,
-    fontSize:18,
-    fontWeight:'bold'
+    marginTop: 6,
+    color: pC.primario.DEFAULT,
+    fontSize: 18,
+    fontWeight: 'bold'
   },
 
   palabras: {
-    margin:3,
+    margin: 3,
     borderColor: pC.primario.DEFAULT + pC.transparencia[90],
-    borderWidth:1,
+    borderWidth: 1,
     borderRadius: 10,
     padding: 7,
-    minWidth:120,
-    maxWidth:120,
+    minWidth: 120,
+    maxWidth: 120,
     alignItems: 'center'
   },
   palabrasDeselec: {
@@ -739,7 +874,6 @@ const estilos = StyleSheet.create({
     borderColor: pC.terciario.DEFAULT,
     borderWidth: 2,
     padding: 6
-    
   },
   palabrasTexto: {
     fontSize: 15,
@@ -777,7 +911,7 @@ const estilos = StyleSheet.create({
     fontSize: 15,
     fontWeight: 'bold',
     color: pC.blanco
-  },
+  }
 })
 
 export default Crucigrama

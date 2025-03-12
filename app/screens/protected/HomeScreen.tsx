@@ -141,7 +141,7 @@ export function HomeScreen() {
           contentContainerStyle={styles.listContainer}
         />
 
-        <Text style={{ color: '#FF00A6', fontSize: 20, marginBottom: 10 }}>Noticias de la semana</Text>
+        <Text style={{ color: '#FF00A6', fontSize: 20, marginBottom: 10, fontWeight: 600 }}>Noticias de la semana</Text>
         <Carousel data={newsData} onImagePress={data => selectNew(data.title, data.body, data.cover_image_url)} />
         <FlatList
           style={{ marginTop: 30, marginBottom: 150 }}

@@ -1,7 +1,7 @@
 const path = require('path')
 
 module.exports = {
-      presets: ['module:@react-native/babel-preset',],
+  presets: ['module:@react-native/babel-preset'],
   plugins: [
     [
       require.resolve('babel-plugin-module-resolver'),
@@ -16,7 +16,6 @@ module.exports = {
           '@utils': path.resolve(__dirname, './app/utils')
         }
       }
-    ],
-    'react-native-reanimated/plugin',
+    ]
   ]
 }

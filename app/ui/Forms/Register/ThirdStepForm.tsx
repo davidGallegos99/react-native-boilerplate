@@ -68,7 +68,9 @@ export function ThirdStepForm({ onSubmit }: Props) {
       </View>
       <View style={styles.buttonBox}>
         <Button handleClick={handleConfirm} appearance='filled' color={colors.primary} rounded>
-          CONFIRMAR
+          <Text style={styles.buttonText} numberOfLines={1} adjustsFontSizeToFit>
+            CONFIRMAR
+          </Text>
         </Button>
       </View>
     </View>
@@ -100,6 +102,13 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     flex: 1,
     paddingBottom: 30
+  },
+  buttonText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    color: '#fff',
+    paddingHorizontal: 10
   },
   subtitle: {
     fontSize: 16,
