@@ -6,6 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { StackNavigationProp } from '@react-navigation/stack'
 import { IGetGeneralUser, IUpdateUserInfo } from 'interfaces/CreateUser.interface'
 import { Asset, ImageLibraryOptions, launchCamera, launchImageLibrary } from 'react-native-image-picker'
+import ImageResizer from 'react-native-image-resizer'
 import { useToast } from 'react-native-toast-notifications'
 import Icon from 'react-native-vector-icons/MaterialIcons'
 
@@ -17,6 +18,8 @@ import api from '@config/axiosConfig'
 import { isNotEmptyObject } from '@utils/helpers'
 
 import { RootStackParamList } from '@screens/RegisterScreen'
+
+import notPic from '@assets/images/10.png'
 
 import { ProfileInfo } from './ProfileInfo'
 
@@ -63,11 +66,25 @@ const ProfileInformation = ({ navigation }: Props) => {
   }
 
   const uploadImageBlob = async (file: Asset) => {
+    if (!file?.uri) {
+      console.error('⚠️ La imagen capturada no tiene una URI válida:', file)
+      toast.show('Error al capturar la imagen.', {
+        type: 'danger',
+        placement: 'top',
+        duration: 4000,
+        animationType: 'slide-in'
+      })
+      return
+    }
+    const resizedImage = await ImageResizer.createResizedImage(file.uri, 1000, 1000, 'JPEG', 80, 0)
+    const formattedUri = resizedImage.uri.startsWith('file://') ? resizedImage.uri : `file://${resizedImage.uri}`
+    const fileName = `avatar_${Date.now()}.jpg`
+
     const formData = new FormData()
     formData.append('image', {
-      uri: file.uri,
-      type: file.type || 'image/jpeg',
-      name: file.fileName || 'image.jpg'
+      uri: formattedUri,
+      name: fileName,
+      type: 'image/jpeg'
     })
 
     try {
@@ -76,21 +93,20 @@ const ProfileInformation = ({ navigation }: Props) => {
       const response = await fetch('https://includ.app/api/auth/profile/avatar', {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/json',
+          'Content-Type': 'multipart/form-data'
         },
         body: formData
       })
 
-      const responseBody = await response.json()
-      if (responseBody && responseBody?.user?.avatar) {
-        if (userInformation?.data) {
-          setUserInformation({
-            data: {
-              ...userInformation.data,
-              avatar: responseBody?.user?.avatar || null
-            }
-          })
-        }
+      const textResponse = await response.text()
+      const responseBody = JSON.parse(textResponse)
+      if (response.ok && responseBody?.user?.avatar) {
+        setUserInformation(prev =>
+          prev?.data ? { ...prev, data: { ...prev.data, avatar: responseBody.user.avatar ?? prev.data.avatar } } : prev
+        )
+
         toast.show('Avatar actualizado exitosamente.', {
           type: 'success',
           placement: 'top',
@@ -98,10 +114,11 @@ const ProfileInformation = ({ navigation }: Props) => {
           animationType: 'slide-in'
         })
       } else {
-        throw new Error('El servidor no devolvió la URL de la imagen.')
+        throw new Error(responseBody?.message || 'Error al subir la imagen')
       }
-    } catch (error) {
-      toast.show('Imagen demasiado pesada.', {
+    } catch (error: any) {
+      console.error('❌ Error en la subida:', error?.message)
+      toast.show(error?.message || 'Error al subir la imagen.', {
         type: 'danger',
         placement: 'top',
         duration: 4000,
@@ -198,9 +215,7 @@ const ProfileInformation = ({ navigation }: Props) => {
               <Text style={styles.title}>Mi Perfil</Text>
               <TouchableOpacity onPress={handleImageSelection}>
                 <Image
-                  source={{
-                    uri: userInformation?.data?.avatar || 'https://via.placeholder.com/100'
-                  }}
+                  source={userInformation?.data?.avatar ? { uri: userInformation.data.avatar } : notPic}
                   style={styles.profileImage}
                 />
               </TouchableOpacity>

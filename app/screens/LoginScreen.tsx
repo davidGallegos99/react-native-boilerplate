@@ -89,12 +89,12 @@ function LoginScreen({ navigation }: Props) {
       const response = await Login(data)
       await storeData('jwt', response?.access_token)
       await storeData('user', JSON.stringify(response))
-      toast.show('Bienvenid@.', {
-        type: 'success',
-        placement: 'top',
-        icon: <OKicon />,
-        duration: 4000
-      })
+      // toast.show('Bienvenid@.', {
+      //   type: 'success',
+      //   placement: 'top',
+      //   icon: <OKicon />,
+      //   duration: 4000
+      // })
       navigation.navigate('Description1')
     } catch (error) {
       handleFailedAttempt()

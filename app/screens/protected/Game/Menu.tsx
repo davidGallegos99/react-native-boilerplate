@@ -34,18 +34,18 @@ const HomeScreen = () => {
       modulo: '1',
       view: 'SopaLetras',
       descripcion: 'Un juego de crucigrama educativo',
-      imagen: require('./src/icons/crucigrama.jpg'),
+      imagen: require('./src/icons/crucigrama.jpg')
     },
     {
       id: '2',
       name: 'EmotiMatch',
       modulo: '1',
-      view: 'Parejas',  
+      view: 'Parejas',
       descripcion: 'un juego divertido de parejas',
-      imagen: require('./src/icons/parejas.jpg'),
+      imagen: require('./src/icons/parejas.jpg')
     }
   ]
-  
+
   return (
     <View style={estilos.contenedorGeneral}>
       {juegos.length != 0 ? (
@@ -73,9 +73,7 @@ const HomeScreen = () => {
                   <TouchableOpacity
                     key={item.id}
                     style={estilos.tarjeta}
-                    onPress={() =>
-                      navigation.navigate('Game', { screen: item.view })
-                    }
+                    onPress={() => navigation.navigate('Game', { screen: item.view })}
                   >
                     <Image source={item.imagen} resizeMode='cover' style={estilos.tarjetaImagen} />
                     <Text style={estilos.tarjetaTitulo}>{item.name}</Text>
@@ -126,6 +124,8 @@ const estilos = StyleSheet.create({
   contenedorMenu: {
     flex: 1,
     marginHorizontal: 20,
+    backgroundColor: pC.negro,
+    alignItems: 'flex-start',
     width: '80%'
   },
   contenedorPie: {
@@ -165,7 +165,7 @@ const estilos = StyleSheet.create({
     flexWrap: 'wrap',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    width:"100%",
+    width: '100%',
     paddingVertical: 20
   }
 })
