@@ -11,26 +11,35 @@ import Orientation from 'react-native-orientation-locker'
 import ConfettiCannon from 'react-native-confetti-cannon'
 import Particles from './src/components/Particulas'
 import {playSound, stopSound} from "./src/components/Audio"
+import sopaLetrasDB from './src/jsons/sopaLetras.json'
 
 const tamCelda = 34
 const bordeCelda = 1
+const margenCelda = 1
+const cantCeldas = 10
+const tamHitbox = (tamCelda * 0.65) - bordeCelda
 const { width, height } = Dimensions.get('window')
 
-const Crucigrama = () => {
+const SopaLetras = () => {
+  const [tablaPos, setTablaPos] = useState({ x: 0, y: 0 })
+  const [tablaDim, setTablaDim] = useState({ x: 0, y: 0 })
+  const [celdasPos, setCeldasPos] = useState<{ x: number; y: number }[][]>(() => Array.from({ length: cantCeldas }, () => Array(cantCeldas).fill({ x: 0, y: 0 })))
+  
   const [mostrarConfetti, setMostrarConfetti] = useState(false)
   const navigation = useNavigation()
   const logoColectivo = require ('./src/logoColectivo.png')
   const [modalSalirVisible, setModalSalirVisible] = useState<boolean>(false)
-  const [status, setStatus] = useState(-2)
+  const [status, setStatus] = useState(0)
   const [modalActivado, setModalActivado] = useState<boolean>(false)
-
-  const tam = 10
+  
   const timerRef = useRef(0)
   const [displayTimer, setDisplayTimer] = useState(0)
   const [enMarcha, setEnMarcha] = useState<boolean>(false)
 
-  const [tabla, setTabla] = useState<string[][]>(Array.from({ length: tam }, () => Array(tam).fill("x")))
-  const [contenedorPos, setContenedorPos] = useState({ x: 0, y: 0 })
+  const [palabras, setPalabras] = useState<string[]>(() => sopaLetrasDB.palabras.map(p => p.concepto))
+  
+  const [tabla, setTabla] = useState<string[][]>(Array.from({ length: cantCeldas }, () => Array(cantCeldas).fill("x")))
+  const refTabla = useRef<View>(null)
 
   const [seleccionadas, setSeleccionadas] = useState(new Set())
   const seleccionadasRef = useRef<Set<string>>(new Set())
@@ -44,8 +53,6 @@ const Crucigrama = () => {
   const [sobreCelda, setSobreCelda] = useState(new Set())
   const sobreCeldaRef = useRef<Set<string>>(new Set())
   const sobreCeldaTimer = useRef<NodeJS.Timeout | null>(null)
-
-  let palabras = ['sexo', 'género', 'respeto', 'igualdad', 'diversidad', 'derechos', 'amor', 'libertad', 'consenso', 'cuidado', 'identidad', 'equidad', 'trans', 'lesbianas', 'bisexual', 'inclusión', 'orgullo', 'empoderar', 'feminismo', 'solidario', 'activismo', 'tolerancia', 'aceptación', 'visibilidad', 'dignidad', 'comunidad', 'valores', 'justicia', 'autonomía', 'educación', 'reconocer', 'protección', 'apoyo', 'colectivo', 'fraternidad', 'seguridad', 'sororidad', 'espectro', 'diverso', 'pride', 'lucha', 'acción', 'aceptar', 'hermandad', 'justo', 'fuerte', 'poder', 'libre', 'único', 'proteger', 'rebelde', 'voz', 'cambio', 'ser', 'gay', 'unidad', 'fraterna', 'pacífico', 'silencio', 'revolución', 'lesbiana', 'orgullosa', 'brillar', 'creer', 'educar', 'esperar', 'tolerar', 'fuerza', 'liderar', 'progreso', 'colectiva', 'inclusiva', 'respetar', 'volar', 'vibrar', 'latente']
 
   const [elegidas, setElegidas] = useState<string[]>([])
   const [elegidasRef, setElegidasRef] = useState<Set<string>>(new Set())
@@ -95,87 +102,87 @@ const Crucigrama = () => {
     setSobreCelda(new Set())
   }
 
-  const finalizarSeleccion = useCallback(() => {  
+  const finalizarSeleccion = useCallback(() => {
     const celdasSeleccionadas = Array.from(seleccionadasRef.current)
     if (celdasSeleccionadas.length < 2) {
-      seleccionadasRef.current.clear()
-      return
+        seleccionadasRef.current.clear()
+        return
     }
-  
+
     const filas = celdasSeleccionadas.map(celda => parseInt(celda.split('-')[0]))
     const columnas = celdasSeleccionadas.map(celda => parseInt(celda.split('-')[1]))
-  
-    const esMismaFila = filas.every(fila => fila === filas[0])
-    const esMismaColumna = columnas.every(columna => columna === columnas[0])
-  
-    if (esMismaFila || esMismaColumna) {
-      if (esMismaColumna && filas[0] > filas[1]) filas.reverse()
-      if (esMismaFila && columnas[0] > columnas[1]) columnas.reverse()
-  
-      const palabraSel = celdasSeleccionadas.map((_, i) => tabla[filas[i]][columnas[i]]).join("")
-  
-      if (elegidasRef.has(palabraSel)) {
+
+    const palabraSel = celdasSeleccionadas.map((_, i) => tabla[filas[i]][columnas[i]]).join("")
+
+    if (elegidasRef.has(palabraSel)) {
         seleccionadasRef.current.clear()
-  
+        
         if (!modalActivado) {
-          setModalActivado(true)
-          setTimeout(() => setModalActivado(false), 1500)
+            setModalActivado(true)
+            setTimeout(() => setModalActivado(false), 1500)
         }
+
         iniciarParticulas()
         playSound("punto")
         setRestantes(prev => prev - 1)
         setSeleccionadas(prev => new Set([...prev, ...celdasSeleccionadas]))
         setElegidasRef(prev => {
-          const nuevasElegidas = new Set(prev)
-          nuevasElegidas.delete(palabraSel)
-          return nuevasElegidas
+            const nuevasElegidas = new Set(prev)
+            nuevasElegidas.delete(palabraSel)
+            return nuevasElegidas
         })
 
         setRestantesDeselec(prev => {
-          const nuevosRestantesDeselec = [...prev]
-          nuevosRestantesDeselec[elegidas.indexOf(palabraSel)] = true
-          return nuevosRestantesDeselec
+            const nuevosRestantesDeselec = [...prev]
+            nuevosRestantesDeselec[elegidas.indexOf(palabraSel)] = true
+            return nuevosRestantesDeselec
         })
-      }
     }
+
     seleccionadasRef.current.clear()
-    if (restantes == 1) {
-      finalizar()
-      playSound("victoria")
+    if (restantes === 1) {
+        finalizar()
+        playSound("victoria")
     }
   }, [tabla, elegidasRef, restantes, modalActivado])
 
   useEffect(() => {
       animacionMov.setValue(0)
       animacionOpacidad.setValue(0)
-      switch(status){
-        case 0:{
-          animacionMov.setValue(0)
-          animacionOpacidad.setValue(0)
-  
-          Animated.parallel([
-            Animated.timing(animacionMov, {toValue: 0, duration: 400, useNativeDriver: true}),
-            Animated.timing(animacionOpacidad, {toValue: 1, duration: 400, useNativeDriver: true})
-          ]).start(() => {})
-        }
-        case 1:{
-          animacionMov.setValue(0)
-          animacionOpacidad.setValue(0)
-  
-          Animated.parallel([
-            Animated.timing(animacionMov, {toValue: 0, duration: 400, useNativeDriver: true}),
-            Animated.timing(animacionOpacidad, {toValue: 1, duration: 400, useNativeDriver: true})
-          ]).start(() => {})
-        }
-        case 9:{
-          animacionMov.setValue(0)
-          animacionOpacidad.setValue(0)
-  
-          Animated.parallel([
-            Animated.timing(animacionMov, {toValue: 0, duration: 400, useNativeDriver: true}),
-            Animated.timing(animacionOpacidad, {toValue: 1, duration: 400, useNativeDriver: true})
-          ]).start(() => {})
-        }
+
+      if (status === 0){
+        animacionMov.setValue(0)
+        animacionOpacidad.setValue(0)
+
+        Animated.parallel([
+          Animated.timing(animacionMov, {toValue: 0, duration: 400, useNativeDriver: true}),
+          Animated.timing(animacionOpacidad, {toValue: 1, duration: 400, useNativeDriver: true})
+        ]).start(() => {})
+      }
+
+      if (status === 1){
+        animacionMov.setValue(0)
+        animacionOpacidad.setValue(0)
+
+        Animated.parallel([
+          Animated.timing(animacionMov, {toValue: 0, duration: 400, useNativeDriver: true}),
+          Animated.timing(animacionOpacidad, {toValue: 1, duration: 400, useNativeDriver: true})
+        ]).start(() => {})
+      }
+
+
+      if (status === 9){
+        animacionMov.setValue(0)
+        animacionOpacidad.setValue(0)
+
+        Animated.parallel([
+          Animated.timing(animacionMov, {toValue: 0, duration: 400, useNativeDriver: true}),
+          Animated.timing(animacionOpacidad, {toValue: 1, duration: 400, useNativeDriver: true})
+        ]).start(() => {})
+      }
+
+      if (status === -2){
+        play()
       }
     }, [status])
 
@@ -183,7 +190,7 @@ const Crucigrama = () => {
     Orientation.lockToPortrait()
     
     const cargarTabla = async () => {
-      await llenarTabla(tam, tam)
+      await llenarTabla(cantCeldas, cantCeldas)
     }
 
     cargarTabla().catch((error) => {
@@ -229,10 +236,10 @@ const Crucigrama = () => {
     }, [])
   )
 
-  const generarLetras = () => {
-    const letras = 'ABCDEFGHIJKLMNÑOPQRSTUVWXYZ'
-    return letras[Math.floor(Math.random() * letras.length)]
-  }
+  const generarLetras = (() => {
+    const letras = 'ABCDEFGHIJKLMNÑOPQRSTUVWXYZ'.split('')
+    return () => letras[Math.floor(Math.random() * letras.length)]
+  })()
 
   const llenarTabla = async (filas: number, columnas: number) => {
     try {  
@@ -240,55 +247,98 @@ const Crucigrama = () => {
       const minPalabras = Math.max(5, Math.floor(maxPalabras * 0.4))
       let numeroPal = Math.floor(Math.random() * (maxPalabras - minPalabras + 1)) + minPalabras
       const nuevaTabla = Array.from({ length: filas }, () => Array.from({ length: columnas }, () => ""))
-  
       const palabrasEle: string[] = []
-  
+      const palabrasDesordenadas2 = palabras.sort(() => Math.random() - 0.5)
+      setPalabras(palabrasDesordenadas2)
+      let palabraDiagonalInsertada = false
+      let palabraCruzadaInsertada = false
+      let puntoInterseccion = { fila: -1, columna: -1, letra: '' }
+
       while (numeroPal > 0) {
-        palabras = [...palabras].sort(() => Math.random() - 0.5)
-
-        let largoPalabra = palabras[0].length
-        palabras[0] = palabras[0].toUpperCase()
-
-        const direccion = Math.random() < 0.5
-
+        let palabra = palabras.shift()?.toUpperCase()
+        if (!palabra) break
+        let largoPalabra = palabra.length
+        let direccion = Math.floor(Math.random() * 3)
+        if (!palabraDiagonalInsertada) {
+          direccion = 2
+          palabraDiagonalInsertada = true
+        }
+  
         for (let intento = 0; intento < 100; intento++) {
-          const filaInicio = Math.floor(Math.random() * (filas - (direccion ? 0 : largoPalabra)))
-          const columnaInicio = Math.floor(Math.random() * (columnas - (direccion ? largoPalabra : 0)))
-
+          const filaInicio = Math.floor(Math.random() * (filas - (direccion === 1 ? largoPalabra : 0)))
+          const columnaInicio = Math.floor(Math.random() * (columnas - (direccion === 0 ? largoPalabra : 0)))
           if (filaInicio < 0 || columnaInicio < 0) continue
-
           let cabe = true
-
+  
           for (let i = 0; i < largoPalabra; i++) {
-            const fila = filaInicio + (direccion ? 0 : i)
-            const columna = columnaInicio + (direccion ? i : 0)
-
+            const fila = filaInicio + (direccion === 1 ? i : direccion === 2 ? i : 0)
+            const columna = columnaInicio + (direccion === 0 ? i : direccion === 2 ? i : 0)
             if (fila >= filas || columna >= columnas || fila < 0 || columna < 0) {
               cabe = false
               break
             }
-
-            if (
-              nuevaTabla[fila][columna] !== "" &&
-              nuevaTabla[fila][columna] !== palabras[0][i]
-            ) {
+            if (nuevaTabla[fila][columna] !== "" && nuevaTabla[fila][columna] !== palabra[i]) {
               cabe = false
               break
             }
           }
-
+  
           if (cabe) {
             for (let i = 0; i < largoPalabra; i++) {
-              const fila = filaInicio + (direccion ? 0 : i)
-              const columna = columnaInicio + (direccion ? i : 0)
-              nuevaTabla[fila][columna] = palabras[0][i]
+              const fila = filaInicio + (direccion === 1 ? i : direccion === 2 ? i : 0)
+              const columna = columnaInicio + (direccion === 0 ? i : direccion === 2 ? i : 0)
+              nuevaTabla[fila][columna] = palabra[i]
+              if (!palabraCruzadaInsertada && i === Math.floor(largoPalabra / 2)) {
+                puntoInterseccion = { fila, columna, letra: palabra[i] }
+              }
             }
-            palabrasEle.push(palabras[0])
+            palabrasEle.push(palabra)
             numeroPal--
             break
           }
         }
-        palabras = palabras.slice(1)
+  
+        if (palabraDiagonalInsertada && !palabraCruzadaInsertada && puntoInterseccion.fila !== -1) {
+          let palabraCruzada = palabras.shift()?.toUpperCase()
+          if (!palabraCruzada) continue
+          let largoPalabraCruzada = palabraCruzada.length
+          let cruzadaDireccion = Math.random() > 0.5 ? 0 : 1
+  
+          for (let intento = 0; intento < 100; intento++) {
+            let filaInicio = cruzadaDireccion === 1 ? puntoInterseccion.fila - Math.floor(largoPalabraCruzada / 2) : puntoInterseccion.fila
+            let columnaInicio = cruzadaDireccion === 0 ? puntoInterseccion.columna - Math.floor(largoPalabraCruzada / 2) : puntoInterseccion.columna
+            if (filaInicio < 0 || columnaInicio < 0 || filaInicio + largoPalabraCruzada >= filas || columnaInicio + largoPalabraCruzada >= columnas) {
+              continue
+            }
+  
+            let cabeCruzada = true
+  
+            for (let i = 0; i < largoPalabraCruzada; i++) {
+              let fila = cruzadaDireccion === 1 ? filaInicio + i : filaInicio
+              let columna = cruzadaDireccion === 0 ? columnaInicio + i : columnaInicio
+              if (fila >= filas || columna >= columnas || fila < 0 || columna < 0) {
+                cabeCruzada = false
+                break
+              }
+              if (nuevaTabla[fila][columna] !== "" && nuevaTabla[fila][columna] !== palabraCruzada[i]) {
+                cabeCruzada = false
+                break
+              }
+            }
+  
+            if (cabeCruzada) {
+              for (let i = 0; i < largoPalabraCruzada; i++) {
+                let fila = cruzadaDireccion === 1 ? filaInicio + i : filaInicio
+                let columna = cruzadaDireccion === 0 ? columnaInicio + i : columnaInicio
+                nuevaTabla[fila][columna] = palabraCruzada[i]
+              }
+              palabrasEle.push(palabraCruzada)
+              palabraCruzadaInsertada = true
+              numeroPal--
+              break
+            }
+          }
+        }
       }
   
       for (let fila = 0; fila < filas; fila++) {
@@ -305,7 +355,8 @@ const Crucigrama = () => {
     } catch (error) {
       console.log("Error al llenar la tabla:", error)
     }
-  }  
+  }
+   
   
 
   useEffect(() => {
@@ -319,6 +370,7 @@ const Crucigrama = () => {
   const generarGestoPan = useCallback((filaI: number, columnaI: number) => {
     let ultimaFila = filaI
     let ultimaColumna = columnaI
+    let direccion: { x: any; y: any } | null = null
   
     return Gesture.Pan()
       .onTouchesDown(() => {
@@ -326,6 +378,7 @@ const Crucigrama = () => {
       })
       .onTouchesUp(() => {
         runOnJS(limpiarSobreCelda)()
+        runOnJS(finalizarSeleccion)()
       })
       .onTouchesCancelled(() => {
         runOnJS(limpiarSobreCelda)()
@@ -333,28 +386,47 @@ const Crucigrama = () => {
       .onStart(() => {
         ultimaFila = filaI
         ultimaColumna = columnaI
+        direccion = null
         runOnJS(actualizarSeleccionTemporal)(filaI, columnaI)
       })
       .onUpdate((e) => {
         'worklet'
-        const offsetX = e.translationX / tamCelda
-        const offsetY = e.translationY / tamCelda
+        let filaCercana = -1
+        let columnaCercana = -1
+        let distanciaMinima = Infinity
   
-        const nuevaFila = Math.min(Math.max(Math.round(ultimaFila + offsetY), 0), tam - 1)
-        const nuevaColumna = Math.min(Math.max(Math.round(ultimaColumna + offsetX), 0), tam - 1)
-  
-        if (nuevaFila !== ultimaFila || nuevaColumna !== ultimaColumna) {
-          ultimaFila = nuevaFila
-          ultimaColumna = nuevaColumna
-          runOnJS(actualizarSeleccionTemporal)(nuevaFila, nuevaColumna)
+        for (let fila = 0; fila < cantCeldas; fila++) {
+          for (let columna = 0; columna < cantCeldas; columna++) {
+            const celda = celdasPos[fila][columna]
+            if (!celda) continue
+            const hitboxX = celda.x + (tamCelda - tamHitbox) / 2
+            const hitboxY = celda.y + (tamCelda - tamHitbox) / 2
+            if ( e.absoluteX >= hitboxX && e.absoluteX <= hitboxX + tamHitbox && e.absoluteY >= hitboxY && e.absoluteY <= hitboxY + tamHitbox ) {
+              const distancia = Math.hypot(e.absoluteX - hitboxX, e.absoluteY - hitboxY)
+              if (distancia < distanciaMinima) {
+                distanciaMinima = distancia
+                filaCercana = fila
+                columnaCercana = columna
+        }}}}
+        if (filaCercana === -1 || columnaCercana === -1) return
+        if (!direccion && (filaCercana !== filaI || columnaCercana !== columnaI)) {
+          const dx = columnaCercana - columnaI
+          const dy = filaCercana - filaI
+          const gcd = Math.abs(dx) > 0 && Math.abs(dy) > 0 ? Math.abs(dx) : 1
+          direccion = { x: dx / gcd, y: dy / gcd }
         }
-        runOnJS(actualizarSobreCelda)(nuevaFila, nuevaColumna)
+        const dx = columnaCercana - ultimaColumna
+        const dy = filaCercana - ultimaFila
+        if ( direccion && dx * direccion.x >= 0 && dy * direccion.y >= 0 && (direccion.x === 0 || direccion.y === 0 || Math.abs(dx) === Math.abs(dy)) ) {
+          if (filaCercana !== ultimaFila || columnaCercana !== ultimaColumna) {
+            ultimaFila = filaCercana
+            ultimaColumna = columnaCercana
+            runOnJS(actualizarSeleccionTemporal)(filaCercana, columnaCercana)
+          }
+          runOnJS(actualizarSobreCelda)(filaCercana, columnaCercana)
+        }
       })
-      .onEnd(() => {
-        runOnJS(limpiarSobreCelda)()
-        runOnJS(finalizarSeleccion)()
-      })
-  }, [actualizarSobreCelda, limpiarSobreCelda, actualizarSeleccionTemporal, finalizarSeleccion])
+  }, [actualizarSobreCelda, limpiarSobreCelda, actualizarSeleccionTemporal, finalizarSeleccion])  
 
   const tablaMemo = useMemo(() => {
     return tabla.map((fila, filaI) => (
@@ -364,19 +436,19 @@ const Crucigrama = () => {
           const isSobreCelda = sobreCelda.has(`${filaI}-${columnaI}`)
 
           return (
-            <GestureDetector key={columnaI} gesture={generarGestoPan(filaI, columnaI)}>
-              <View
-                style={[
-                  estilos.celda,
-                  isSeleccionada && estilos.celdaSeleccionada,
-                  isSobreCelda && estilos.celdaSobre
-                ]}
-              >
-                <Text style={estilos.celdaTexto}>{celda}</Text>
-              </View>
-            </GestureDetector>
-          )
-        })}
+            <View key={columnaI}
+              style={[
+                estilos.celda,
+                isSeleccionada && estilos.celdaSeleccionada,
+                isSobreCelda && estilos.celdaSobre
+              ]}>
+              <GestureDetector gesture={generarGestoPan(filaI, columnaI)}>
+                <View style={estilos.celdaTextoContenedor}>
+                  <Text style={estilos.celdaTexto}>{celda}</Text>
+                </View>
+              </GestureDetector>
+            </View>
+          )})}
       </View>
     ))
   }, [tabla, seleccionadas, sobreCelda])
@@ -405,14 +477,27 @@ const Crucigrama = () => {
         isVisible={modalActivado}
         animationIn={'fadeInUp'}
         animationOut={'fadeOutDown'}
-        style={estilos.modalContenedor}
-      >
+        style={estilos.modalContenedor}>
 
-        <View style={estilos.modalContenido}>
-          <Text style={estilos.encabezado}>{"¡Has encontrado una palabra!"}</Text>
-        </View>
-      </ReactNativeModal>
+          <View style={estilos.modalContenido}>
+            <Text style={estilos.encabezado}>{"¡Has encontrado una palabra!"}</Text>
+          </View>
+        </ReactNativeModal>
         
+        <View style={{
+          position: 'absolute',
+          left: 0,
+          top: 0,
+          transform: [
+            {translateX: celdasPos[0][1].x}, 
+            {translateY: celdasPos[0][1].y}
+          ],
+          backgroundColor:"invisible", 
+          width:10, 
+          height:10,
+          zIndex: 9999
+          }}></View>
+
         <View style={estilos.contenedor}>
           {mostrarParticulas && (
             <Particles 
@@ -446,10 +531,25 @@ const Crucigrama = () => {
 
           <View style={estilos.cuerpo}>
             <View style={estilos.crucigramaContenedor}>
-              <View style={estilos.tabla} onLayout={(event) => {
-              const layout = event.nativeEvent.layout;
-              setContenedorPos({ x: layout.x, y: layout.y })
-            }}>
+              <View style={estilos.tabla} ref={refTabla} onLayout={() => {
+                refTabla.current?.measureInWindow((x, y) => {
+                  setTablaPos({ x, y })
+                  setTablaDim({ x: x * cantCeldas, y: y * cantCeldas })
+
+                  setTimeout(()=> {
+                    const nuevasPosiciones: { x: number; y: number }[][] = []
+                    for (let fila = 0; fila < cantCeldas; fila++) {
+                      nuevasPosiciones[fila] = []
+                      for (let columna = 0; columna < cantCeldas; columna++) {
+                          nuevasPosiciones[fila][columna] = {
+                              x: x + columna * (tamCelda + margenCelda + bordeCelda),
+                              y: y + fila * (tamCelda + margenCelda + bordeCelda),
+                          };
+                      }
+                    }
+                    setCeldasPos(nuevasPosiciones)
+                    },100)
+                })}}>
                 {tablaMemo}
               </View>
             </View>
@@ -533,7 +633,7 @@ const Crucigrama = () => {
           <Image source={logoColectivo} style={estilos.logoColectivo} resizeMode='cover'></Image>
           <Text style={estilos.tituloFullTexto}>{"¡Equipaje de género!"}</Text>
           <Text style={estilos.tituloObjetivoTexto}>{"¡Busca y encuentra entre la sopa de letra los diferentes conceptos!"}</Text>
-          <TouchableOpacity style={estilos.botonEmpezarContainer} onPress={play}>
+          <TouchableOpacity style={estilos.botonEmpezarContainer} onPress={cargando}>
             <View style={estilos.botonEmpezar}>
               <Text style={estilos.botonEmpezarTexto}>Empezar Juego</Text>
             </View>
@@ -678,15 +778,25 @@ const estilos = StyleSheet.create({
     width: tamCelda,
     height: tamCelda,
     borderWidth: bordeCelda,
-    borderRadius:5,
+    borderRadius: 5,
+    margin: margenCelda,
     backgroundColor: pC.terciario.claro,
     borderColor: pC.primario.oscuro,
     justifyContent: 'center',
     alignItems: 'center',
   },
+  celdaTextoContenedor: {
+    width: tamHitbox,
+    height: tamHitbox,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: "invisible",
+    textAlign: 'center'
+  },
   celdaTexto: {
     fontSize: 18,
     fontWeight:'bold',
+    lineHeight: 22,
     color:pC.primario.DEFAULT
   },
   celdaSobre: {
@@ -780,4 +890,4 @@ const estilos = StyleSheet.create({
   },
 })
 
-export default Crucigrama
+export default SopaLetras

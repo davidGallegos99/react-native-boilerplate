@@ -32,7 +32,7 @@ const HomeScreen = () => {
       id: '1',
       name: 'Equipaje de género',
       modulo: '1',
-      view: 'Crucigrama',
+      view: 'SopaLetras',
       descripcion: 'Un juego de crucigrama educativo',
       imagen: require('./src/icons/crucigrama.jpg'),
     },

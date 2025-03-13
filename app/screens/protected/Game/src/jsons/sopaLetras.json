@@ -1,0 +1,180 @@
+{
+    "palabras": [
+        {
+            "concepto": "Sexo",
+            "definicion": "Características biológicas y fisiológicas que diferencian a los seres humanos en masculinos y femeninos."
+        },
+        {
+            "concepto": "Género",
+            "definicion": "Conjunto de roles, comportamientos e identidades que una sociedad considera apropiados para cada sexo."
+        },
+        {
+            "concepto": "Identidad",
+            "definicion": "Percepción interna y personal que una persona tiene de sí misma en relación con el género."
+        },
+        {
+            "concepto": "Expresión",
+            "definicion": "Manera en que una persona manifiesta su identidad de género a través de su apariencia, vestimenta y comportamiento."
+        },
+        {
+            "concepto": "Orientación",
+            "definicion": "Atracción emocional, romántica o sexual de una persona hacia otras."
+        },
+        {
+            "concepto": "Cisgénero",
+            "definicion": "Persona cuya identidad de género coincide con el sexo asignado al nacer."
+        },
+        {
+            "concepto": "Transgénero",
+            "definicion": "Persona cuya identidad de género no coincide con el sexo asignado al nacer."
+        },
+        {
+            "concepto": "NoBinario",
+            "definicion": "Identidad de género que no se ajusta estrictamente a las categorías de masculino o femenino."
+        },
+        {
+            "concepto": "Intersexual",
+            "definicion": "Persona que nace con características sexuales que no encajan en las típicas definiciones de masculino o femenino."
+        },
+        {
+            "concepto": "Fluido",
+            "definicion": "Identidad de género que puede cambiar con el tiempo."
+        },
+        {
+            "concepto": "Andrógino",
+            "definicion": "Persona cuya apariencia y expresión de género combinan características masculinas y femeninas."
+        },
+        {
+            "concepto": "Transfemenino",
+            "definicion": "Persona asignada como hombre al nacer pero que se identifica como mujer"
+        },
+        {
+            "concepto": "Binario",
+            "definicion": "Sistema de género que reconoce únicamente los géneros masculino y femenino."
+        },
+        {
+            "concepto": "Conformidad",
+            "definicion": "Cuando la expresión de género de una persona no se ajusta a las normas culturales."
+        },
+        {
+            "concepto": "Queer",
+            "definicion": "Término inclusivo para identidades de género y orientaciones sexuales fuera de lo tradicional."
+        },
+        {
+            "concepto": "Disforia",
+            "definicion": "Malestar o angustia que una persona puede sentir debido a la incongruencia entre su identidad de género y su sexo asignado al nacer."
+        },
+        {
+            "concepto": "Euforia",
+            "definicion": "Sentimiento positivo cuando la identidad de género de una persona es afirmada o reconocida."
+        },
+        {
+            "concepto": "Pronombres",
+            "definicion": "Palabras usadas para referirse a una persona, como él, ella, elle."
+        },
+        {
+            "concepto": "Deadnaming",
+            "definicion": "Uso del nombre de nacimiento de una persona trans cuando ha cambiado su identidad de género."
+        },
+        {
+            "concepto": "Transición",
+            "definicion": "Proceso por el cual una persona cambia su género socialmente, legalmente o médicamente."
+        },
+        {
+            "concepto": "Asignación",
+            "definicion": "Género que se designa a una persona basado en sus características biológicas al nacer."
+        },
+        {
+            "concepto": "Neutro",
+            "definicion": "Identidad de género que evita la clasificación en masculino o femenino."
+        },
+        {
+            "concepto": "Asexual",
+            "definicion": "Persona que experimenta poca o ninguna atracción sexual."
+        },
+        {
+            "concepto": "Demisexual",
+            "definicion": "Persona que solo siente atracción sexual después de establecer un fuerte vínculo emocional."
+        },
+        {
+            "concepto": "Bisexual",
+            "definicion": "Persona atraída emocional o sexualmente hacia más de un género."
+        },
+        {
+            "concepto": "Pansexual",
+            "definicion": "Persona que siente atracción sin importar el género de la otra persona."
+        },
+        {
+            "concepto": "Heterosexual",
+            "definicion": "Persona atraída hacia individuos del género opuesto."
+        },
+        {
+            "concepto": "Homosexual",
+            "definicion": "Persona atraída hacia individuos del mismo género."
+        },
+        {
+            "concepto": "Poliamor",
+            "definicion": "Modelo de relaciones afectivas en el que se tienen múltiples parejas consensuadas."
+        },
+        {
+            "concepto": "Heteronormatividad",
+            "definicion": "Creencia de que la heterosexualidad es la única orientación válida o natural."
+        },
+        {
+            "concepto": "Machismo",
+            "definicion": "Actitud que considera al hombre superior a la mujer."
+        },
+        {
+            "concepto": "Feminismo",
+            "definicion": "Movimiento social que busca la igualdad de derechos entre géneros."
+        },
+        {
+            "concepto": "Misoginia",
+            "definicion": "Aversión o desprecio hacia las mujeres."
+        },
+        {
+            "concepto": "Misandria",
+            "definicion": "Aversión o desprecio hacia los hombres."
+        },
+        {
+            "concepto": "Transfobia",
+            "definicion": "Discriminación o rechazo hacia personas transgénero."
+        },
+        {
+            "concepto": "Bifobia",
+            "definicion": "Discriminación o rechazo hacia personas bisexuales."
+        },
+        {
+            "concepto": "Homofobia",
+            "definicion": "Discriminación o rechazo hacia personas homosexuales."
+        },
+        {
+            "concepto": "Interseccionalidad",
+            "definicion": "Concepto que analiza cómo diferentes formas de discriminación se intersectan y afectan a una persona."
+        },
+        {
+            "concepto": "Drag",
+            "definicion": "Forma de expresión artística en la que se exageran características de género a través del vestuario y la actuación."
+        },
+        {
+            "concepto": "Crossdressing",
+            "definicion": "Práctica de vestirse con ropa tradicionalmente asociada con otro género."
+        },
+        {
+            "concepto": "Androginia",
+            "definicion": "Fusión de características masculinas y femeninas en la apariencia o el comportamiento."
+        },
+        {
+            "concepto": "Inclusividad",
+            "definicion": "Actitud o práctica de integrar a todas las personas sin importar su identidad de género u orientación."
+        },
+        {
+            "concepto": "Visibilidad",
+            "definicion": "Importancia de la representación de identidades diversas en la sociedad."
+        },
+        {
+            "concepto": "Respeto",
+            "definicion": "Valor fundamental para reconocer y aceptar la identidad y orientación de cada persona."
+        }
+    ]
+}
