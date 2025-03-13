@@ -124,8 +124,6 @@ const estilos = StyleSheet.create({
   contenedorMenu: {
     flex: 1,
     marginHorizontal: 20,
-    backgroundColor: pC.negro,
-    alignItems: 'flex-start',
     width: '80%'
   },
   contenedorPie: {
