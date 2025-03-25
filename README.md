@@ -56,12 +56,12 @@ yarn upgradeVersion
 
 ## Splash screen settings
 
-To custom the splash screen **image** you can change the the file in the root folder named: `logo.png` you can can change it by a `PNG` or a `SVG` file
+To custom the splash screen **image** you can change the the file in the root folder named: `logo.svg` you can can change it by a `PNG` or a `SVG` file
 
 Then to generate the images for each platform run:
 
 ```bash
-yarn react-native generate-bootsplash --logo-width 150 ./logo.png
+yarn react-native generate-bootsplash --logo-width 150 ./logo.svg
 ```
 
 Check documentation for usage: [API](https://github.com/zoontek/react-native-bootsplash?tab=readme-ov-file#api)

@@ -39,6 +39,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20
   },
   logoContainer: {
+    marginTop: 38,
     marginBottom: 20
   },
   title: {

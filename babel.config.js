@@ -16,6 +16,7 @@ module.exports = {
           '@utils': path.resolve(__dirname, './app/utils')
         }
       }
-    ]
+    ],
+    'react-native-reanimated/plugin'
   ]
 }

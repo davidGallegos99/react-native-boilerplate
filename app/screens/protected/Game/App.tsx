@@ -6,6 +6,8 @@ import NoEncontradoScreen from './NoEncontrado'
 import TriviaScreen from './Trivia'
 import SopaLetrasScreen from './SopaLetras'
 import ParejasScreen from './Parejas'
+import CrucigramaScreen from './Crucigrama'
+import BuscaPalabraScreen from './BuscaPalabra'
 
 const Stack = createStackNavigator()
 
@@ -25,6 +27,8 @@ const GameApp = () => {
       <Stack.Screen name='Trivia' component={TriviaScreen} options={{ title: 'Trivia',headerShown:false}} />
       <Stack.Screen name='SopaLetras' component={SopaLetrasScreen} options={{ title: 'Equipaje de género',headerShown:false}} />
       <Stack.Screen name='Parejas' component={ParejasScreen} options={{ title: 'EmotiMatch',headerShown:false}} />
+      <Stack.Screen name='Crucigrama' component={CrucigramaScreen} options={{ title: 'ITS',headerShown:false}} />
+      <Stack.Screen name='BuscaPalabra' component={BuscaPalabraScreen} options={{ title: 'Busca palabras',headerShown:false}} />
     </Stack.Navigator>
   )
 }
