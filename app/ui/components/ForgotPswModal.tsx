@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react'
 import { Dimensions, Modal, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
 
+import Icon from 'react-native-vector-icons/Ionicons'
+
 interface PasswordResetModalProps {
   isVisible: boolean
   onClose: () => void
@@ -23,6 +25,8 @@ const PasswordResetModal: React.FC<PasswordResetModalProps> = ({
   const [code, setCode] = useState<string>('')
   const [newPassword, setNewPassword] = useState<string>('')
   const [confirmPassword, setConfirmPassword] = useState<string>('')
+  const [showPassword, setShowPassword] = useState<boolean>(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false)
 
   useEffect(() => {
     if (isVisible) {
@@ -38,6 +42,16 @@ const PasswordResetModal: React.FC<PasswordResetModalProps> = ({
   const validateEmailFormat = (text: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     return emailRegex.test(text)
+  }
+
+  const isValidPassword = (password: string): boolean => {
+    const lengthCheck = password.length >= 8
+    const upperCheck = /[A-Z]/.test(password)
+    const lowerCheck = /[a-z]/.test(password)
+    const numberCheck = /[0-9]/.test(password)
+    const specialCharCheck = /[!@#$%^&*(),.?":{}|<>]/.test(password)
+
+    return lengthCheck && upperCheck && lowerCheck && numberCheck && specialCharCheck
   }
 
   const handleNextStep = async () => {
@@ -62,8 +76,10 @@ const PasswordResetModal: React.FC<PasswordResetModalProps> = ({
       }
       setStep(3)
     } else if (step === 3) {
-      if (!newPassword || newPassword.length < 8) {
-        setErrorMsj('La contraseña debe tener al menos 8 caracteres.')
+      if (!isValidPassword(newPassword)) {
+        setErrorMsj(
+          'La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula, un número y un símbolo.'
+        )
         return
       }
       if (newPassword !== confirmPassword) {
@@ -114,22 +130,42 @@ const PasswordResetModal: React.FC<PasswordResetModalProps> = ({
         <>
           <Text style={styles.title}>Código válido</Text>
           <Text style={styles.subtitle}>Ingrese su nueva contraseña</Text>
-          <TextInput
-            style={styles.textField}
-            placeholder='Nueva contraseña'
-            secureTextEntry
-            value={newPassword}
-            onChangeText={setNewPassword}
-            placeholderTextColor='#9D47B2'
-          />
-          <TextInput
-            style={styles.textField}
-            placeholder='Confirmar contraseña'
-            secureTextEntry
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
-            placeholderTextColor='#9D47B2'
-          />
+
+          <View style={{ position: 'relative', width: '100%' }}>
+            <TextInput
+              style={styles.textField}
+              placeholder='Nueva contraseña'
+              secureTextEntry={!showPassword}
+              value={newPassword}
+              onChangeText={setNewPassword}
+              placeholderTextColor='#9D47B2'
+              autoCapitalize='none'
+            />
+            <TouchableOpacity
+              onPress={() => setShowPassword(!showPassword)}
+              style={{ position: 'absolute', right: 15, top: 15 }}
+            >
+              <Icon name={showPassword ? 'eye-off' : 'eye'} size={20} color='#9D47B2' />
+            </TouchableOpacity>
+          </View>
+
+          <View style={{ position: 'relative', width: '100%' }}>
+            <TextInput
+              style={styles.textField}
+              placeholder='Confirmar contraseña'
+              secureTextEntry={!showConfirmPassword}
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              placeholderTextColor='#9D47B2'
+              autoCapitalize='none'
+            />
+            <TouchableOpacity
+              onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+              style={{ position: 'absolute', right: 15, top: 15 }}
+            >
+              <Icon name={showConfirmPassword ? 'eye-off' : 'eye'} size={20} color='#9D47B2' />
+            </TouchableOpacity>
+          </View>
         </>
       )
     }
