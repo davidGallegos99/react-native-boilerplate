@@ -43,22 +43,6 @@ const HomeScreen = () => {
       view: 'Parejas',
       descripcion: 'un juego divertido de parejas',
       imagen: require('./src/icons/parejas.jpg')
-    },/*
-    {
-      id: '3',
-      name: 'Busca\npalabra',
-      modulo: '1',
-      view: 'buscaPalabra',
-      descripcion: 'Identifiquemos los diferentes tipos de violencia de género',
-      imagen: require('./src/icons/parejas.jpg')
-    },*/
-    {
-      id: '4',
-      name: 'ITS',
-      modulo: '1',
-      view: 'BuscaPalabra',
-      descripcion: 'Un crucigrama de rosquillas muy entretenido',
-      imagen: require('./src/icons/parejas.jpg')
     }
   ]
 
