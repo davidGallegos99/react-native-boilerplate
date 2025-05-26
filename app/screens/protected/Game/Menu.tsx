@@ -51,15 +51,15 @@ const HomeScreen = () => {
       view: 'buscaPalabra',
       descripcion: 'Identifiquemos los diferentes tipos de violencia de género',
       imagen: require('./src/icons/parejas.jpg')
-    },
+    },*/
     {
       id: '4',
       name: 'ITS',
       modulo: '1',
-      view: 'crucigrama',
+      view: 'BuscaPalabra',
       descripcion: 'Un crucigrama de rosquillas muy entretenido',
       imagen: require('./src/icons/parejas.jpg')
-    }*/
+    }
   ]
 
   return (
